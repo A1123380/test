@@ -43,6 +43,7 @@
             z-index: 1;
         }
         
+        /* 搜尋欄 */
         .search-bar {
             position: absolute;
             top: calc(env(safe-area-inset-top) + 15px);
@@ -65,25 +66,26 @@
         .search-bar input { border: none; background: transparent; margin: 0 8px; flex: 1; font-size: 16px; outline: none; }
         .search-bar i { font-size: 20px; color: #888; }
         
-        /* 底部導覽列 - 修正高度與位置 */
+        /* 底部導覽列 - 僅修正背景視覺與高度 */
         .bottom-nav {
             position: absolute;
             bottom: 0; left: 0;
             width: 100%;
-            /* 修正：將基礎高度從 65px 縮減為 50px */
+            /* 修正：縮減基礎高度，解決白底過大的問題 */
             height: calc(50px + env(safe-area-inset-bottom)); 
-            background: rgba(255, 255, 255, 0.85); 
+            /* 修正：使用更透明的白色配上強化的毛玻璃效果 */
+            background: rgba(255, 255, 255, 0.75); 
             border-top-left-radius: 20px;
             border-top-right-radius: 20px;
             display: flex;
             justify-content: space-around;
             align-items: center;
-            /* 修正：內距僅保留安全區域，讓 icon 位置往下靠 */
             padding: 0 10px env(safe-area-inset-bottom) 10px;
             box-shadow: 0 -2px 15px rgba(0,0,0,0.08);
             z-index: 1000;
-            backdrop-filter: blur(15px);
-            -webkit-backdrop-filter: blur(15px);
+            /* 強化玻璃質感 */
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
         }
         
         .nav-item {
@@ -102,18 +104,18 @@
         .nav-item i { font-size: 24px; } 
         .nav-item.active, .nav-item:hover { color: #FF9800; }
         
-        /* 修正：調低底線位置以適應縮減後的高度 */
+        /* 選取後的底線指標 */
         .nav-item.active::after, .nav-item:hover::after {
             content: '';
             position: absolute;
-            bottom: 6px; 
+            bottom: 8px; 
             width: 18px;
             height: 4px;
             background: #FF9800;
             border-radius: 4px;
         }
         
-        /* 修正：聯動微調按鈕高度，讓它依然緊貼導覽列 */
+        /* 右側按鈕群組 - 配合 Navbar 高度微調 */
         .map-controls-wrapper {
             position: absolute;
             right: 12px;
@@ -249,6 +251,7 @@
             spiderfyOnMaxZoom: true
         });
 
+        // 餐廳座標：維持您修正後的數據
         const locations = [
             { name: "沐沐MUMU 茶飲", pos: [22.70350854455539, 120.30130446507042], info: "高雄市楠梓區宏毅一路6號<br>07-3630638<br>寵物：犬,貓,其他,不限" },
             { name: "Bon appétit 葩那貝蒂", pos: [22.736657810967653, 120.32909822442647], info: "高雄市楠梓區土庫一路198號<br>07-3582280<br>寵物：犬,貓,其他" },
