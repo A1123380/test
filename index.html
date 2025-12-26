@@ -3,120 +3,143 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>FurryMap</title>
+    <title>Furry Café Map - 主畫面</title>
     
-    <link rel="manifest" href="manifest.json">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="apple-mobile-web-app-title" content="FurryMap">
+    <meta name="mobile-web-app-capable" content="yes">
 
     <link rel="apple-touch-icon" href="assets/logo/logo.png">
-    <link rel="icon" type="image/svg+xml" href="assets/logo/logo.png">
+    <link rel="icon" type="image/png" href="assets/logo/logo.png">
 
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
-    
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
-        body, html { height: 100%; font-family: "Microsoft JhengHei", sans-serif; overflow: hidden; background: #f5f5f5; }
+        body, html { 
+            height: 100%; 
+            font-family: "Microsoft JhengHei", sans-serif; 
+            overflow: hidden; 
+            background: #f5f5f5; 
+            -webkit-font-smoothing: antialiased; 
+        }
         
+        /* 修正：使用 100dvh 解決手機瀏覽器高度跑位問題 */
         .container {
             position: relative;
             width: 100vw;
             height: 100dvh; 
             overflow: hidden;
-            display: flex;
-            flex-direction: column;
         }
         
-        #mapid { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; }
+        #mapid {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
         
-        /* 搜尋欄位置不變 */
+        /* 修正：搜尋欄改為相對寬度 calc(100% - 60px) 避免手機跑位 */
         .search-bar {
             position: absolute;
-            top: 60px; /* 稍微調低避開動態島 */
-            left: 20px;
-            width: calc(100% - 40px); 
-            height: 48px;
-            background: rgba(233, 233, 234, 0.95);
-            border: 0.5px solid rgba(0,0,0,0.1);
-            border-radius: 24px;
+            top: 60px;                      /* 稍微下調避開動態島 */
+            left: 30px;                     
+            width: calc(100% - 60px);       /* 改為相對寬度 */
+            max-width: 392px;               /* 桌面版維持最大寬度 */
+            height: 50px;                   
+            background: #E9E9EA;
+            border: 1px solid #000000;
+            border-radius: 100px;
             display: flex;
             align-items: center;
-            padding: 0 16px;
-            box-shadow: 0px 4px 12px rgba(0,0,0,0.1);
+            padding: 0 16px;                
+            box-shadow: 0px 4px 4px 0px rgba(0,0,0,0.25);
             z-index: 20;
+            transition: all 0.3s ease;
         }
-        .search-bar input { border: none; background: transparent; margin: 0 8px; flex: 1; font-size: 16px; outline: none; }
-        .search-bar i { color: #888; }
         
-        /* 第二次修正：更精簡的底部導航列 */
+        .search-bar i { font-size: 22px; color: #888; flex-shrink: 0; }
+        .search-bar input { border: none; background: transparent; margin: 0 8px; flex: 1; font-size: 16px; outline: none; }
+        .search-bar .fa-microphone { cursor: pointer; transition: color 0.3s; }
+        .search-bar .fa-microphone:hover { color: #FF9800; }
+        
+        /* 修正：縮減 Navbar 高度至更精簡的 65px */
         .bottom-nav {
             position: absolute;
             bottom: 0; left: 0;
             width: 100%;
-            /* 基礎高度降為 60px */
-            height: calc(60px + env(safe-area-inset-bottom)); 
+            height: calc(65px + env(safe-area-inset-bottom)); 
             background: white;
-            border-top-left-radius: 20px;
-            border-top-right-radius: 20px;
+            border-top-left-radius: 24px;
+            border-top-right-radius: 24px;
             display: flex;
-            justify-content: space-around;
+            justify-content: center;
             align-items: center;
-            /* 調整內距，將圖示稍微往上拉離安全區 */
-            padding: 0 10px calc(env(safe-area-inset-bottom) / 1.5) 10px;
-            box-shadow: 0 -2px 15px rgba(0,0,0,0.08);
+            gap: clamp(20px, 10vw, 56px); 
+            padding: 0 24px;
+            padding-bottom: env(safe-area-inset-bottom);
+            box-shadow: 0 -2px 10px rgba(0,0,0,0.05);
             z-index: 30;
         }
         
         .nav-item {
+            position: relative;
             display: flex;
             flex-direction: column;
             align-items: center;
             color: #8E8E93;
             text-decoration: none;
-            width: 20%;
+            cursor: pointer;
         }
-        .nav-item i { font-size: 24px; }
+        .nav-item i { font-size: 26px; } 
         .nav-item.active { color: #FF9800; }
-        
-        /* 當前頁面提示線 - 調整位置 */
         .nav-item.active::after {
             content: '';
             position: absolute;
-            bottom: calc(env(safe-area-inset-bottom) + 2px);
-            width: 18px;
-            height: 3px;
+            bottom: -6px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 20px;
+            height: 4px;
             background: #FF9800;
-            border-radius: 10px;
+            border-radius: 18px;
         }
-
-        /* 目前位置按鈕 - 隨 NavBar 下移 */
+        
+        /* 目前位置按鈕修正位置 */
         .my-location-btn {
             position: absolute;
-            bottom: calc(60px + env(safe-area-inset-bottom) + 15px);
-            right: 15px;
-            width: 44px;
-            height: 44px;
+            bottom: calc(65px + env(safe-area-inset-bottom) + 15px);
+            right: 24px;
+            width: 48px;
+            height: 48px;
             background: white;
             border-radius: 50%;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+            box-shadow: 0 2px 6px rgba(0,0,0,0.2);
             display: flex;
             justify-content: center;
             align-items: center;
+            cursor: pointer;
             z-index: 10;
         }
-        .my-location-btn i { font-size: 20px; color: #FF9800; }
+        .my-location-btn i { font-size: 24px; color: #FF9800; }
+
+        @media (min-width: 768px) {
+            .search-bar { left: 50%; transform: translateX(-50%); }
+        }
     </style>
 </head>
 <body>
     <div class="container">
         <div id="mapid"></div>
+        
         <div class="search-bar">
             <i class="fa-solid fa-magnifying-glass"></i>
             <input type="text" placeholder="搜尋餐廳">
             <i class="fa-solid fa-microphone"></i>
         </div>
+        
         <nav class="bottom-nav">
             <a href="home.html" class="nav-item active"><i class="fa-solid fa-house"></i></a>
             <a href="article-post.html" class="nav-item"><i class="fa-solid fa-book"></i></a>
@@ -124,15 +147,89 @@
             <a href="photo_album.html" class="nav-item"><i class="fa-solid fa-image"></i></a>
             <a href="#" onclick="checkLoginStatus()" class="nav-item"><i class="fa-solid fa-user"></i></a>
         </nav>
-        <div class="my-location-btn" onclick="flyToHome()"><i class="fa-solid fa-location-crosshairs"></i></div>
+        
+        <div class="my-location-btn" onclick="flyToHome()">
+            <i class="fa-solid fa-location-crosshairs"></i>
+        </div>
+
         <input type="file" id="input_camera" accept="image/*" capture="environment" style="display: none;">
     </div>
+
     <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
     <script>
-        const map = L.map('mapid', { center: [22.7333, 120.2847], zoom: 17, zoomControl: false });
-        L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png').addTo(map);
-        function flyToHome() { map.flyTo([22.7333, 120.2847], 17, { animate: true, duration: 1.5 }); }
-        function triggerCamera(e) { e.preventDefault(); document.getElementById('input_camera').click(); }
+        const map = L.map('mapid', {
+            center: [22.7333, 120.2847],
+            zoom: 17,
+            zoomControl: false
+        });
+        
+        L.control.zoom({ position: 'bottomright' }).addTo(map);
+
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+            attribution: '© OpenStreetMap contributors © CARTO',
+            maxZoom: 20
+        }).addTo(map);
+
+        fetch('https://raw.githubusercontent.com/kiang/taiwan_geojson/master/town.json')
+            .then(response => response.json())
+            .then(data => {
+                L.geoJSON(data, {
+                    style: {
+                        fillColor: '#FFB352',
+                        weight: 1.5,
+                        opacity: 0.8,
+                        color: '#FF9800',
+                        fillOpacity: 0.4
+                    },
+                    onEachFeature: (feature, layer) => {
+                        if (feature.properties?.TOWNNAME) {
+                            layer.bindPopup(feature.properties.TOWNNAME);
+                        }
+                    }
+                }).addTo(map);
+            })
+            .catch(err => console.error('載入鄉鎮區失敗:', err));
+
+        L.circleMarker([22.7333, 120.2847], {
+            radius: 10,
+            fillColor: "#FFB352",
+            color: "#FF9800",
+            weight: 2,
+            opacity: 1,
+            fillOpacity: 0.8
+        }).addTo(map).bindPopup('高雄大學 🎓<br>高雄市楠梓區高雄大學路700號');
+        
+        window.addEventListener('resize', () => {
+            setTimeout(() => map.invalidateSize(true), 200);
+        });
+
+        function flyToHome() {
+            map.flyTo([22.7333, 120.2847], 17, {
+                animate: true,
+                duration: 1.5
+            });
+        }
+    </script>
+    <script>
+        function checkLoginStatus() {
+            if (localStorage.getItem('isLoggedIn') === 'true') {
+                window.location.href = 'profile.html';
+            } else {
+                window.location.href = 'personal.html';
+            }
+        }
+
+        function triggerCamera(event) {
+            event.preventDefault(); 
+            document.getElementById('input_camera').click();
+        }
+
+        document.getElementById('input_camera').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                console.log("照片選取成功:", file.name);
+            }
+        });
     </script>
 </body>
 </html>
