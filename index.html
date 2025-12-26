@@ -6,12 +6,12 @@
     <title>Furry Café Map - 主畫面</title>
     
     <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="FurryMap">
     <meta name="mobile-web-app-capable" content="yes">
 
-    <link rel="apple-touch-icon" href="assets/logo/logo-1.png">
-    <link rel="icon" type="image/png" href="assets/logo/logo-1.png">
+    <link rel="apple-touch-icon" href="assets/logo/logo.png">
+    <link rel="icon" type="image/png" href="assets/logo/logo.png">
 
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
@@ -25,7 +25,6 @@
             -webkit-font-smoothing: antialiased; 
         }
         
-        /* 修正：使用 100dvh 解決手機瀏覽器高度跑位問題 */
         .container {
             position: relative;
             width: 100vw;
@@ -41,47 +40,44 @@
             z-index: 1;
         }
         
-        /* 修正：搜尋欄改為相對寬度 calc(100% - 60px) 避免手機跑位 */
+        /* 搜尋欄：避開上方安全區域 */
         .search-bar {
             position: absolute;
-            top: 60px;                      /* 稍微下調避開動態島 */
-            left: 30px;                     
-            width: calc(100% - 60px);       /* 改為相對寬度 */
-            max-width: 392px;               /* 桌面版維持最大寬度 */
+            top: calc(env(safe-area-inset-top) + 15px);
+            left: 50%;
+            transform: translateX(-50%);
+            width: calc(100% - 60px);       
+            max-width: 392px;               
             height: 50px;                   
-            background: #E9E9EA;
-            border: 1px solid #000000;
+            background: rgba(240, 240, 240, 0.9);
+            border: 1px solid rgba(0,0,0,0.2);
             border-radius: 100px;
             display: flex;
             align-items: center;
             padding: 0 16px;                
-            box-shadow: 0px 4px 4px 0px rgba(0,0,0,0.25);
+            box-shadow: 0px 4px 10px rgba(0,0,0,0.1);
             z-index: 20;
-            transition: all 0.3s ease;
+            backdrop-filter: blur(5px);
         }
         
-        .search-bar i { font-size: 22px; color: #888; flex-shrink: 0; }
         .search-bar input { border: none; background: transparent; margin: 0 8px; flex: 1; font-size: 16px; outline: none; }
-        .search-bar .fa-microphone { cursor: pointer; transition: color 0.3s; }
-        .search-bar .fa-microphone:hover { color: #FF9800; }
+        .search-bar i { font-size: 20px; color: #888; }
         
-        /* 修正：縮減 Navbar 高度至更精簡的 65px */
+        /* 底部導覽列：比例參考 index.jpg */
         .bottom-nav {
             position: absolute;
             bottom: 0; left: 0;
             width: 100%;
             height: calc(65px + env(safe-area-inset-bottom)); 
             background: white;
-            border-top-left-radius: 24px;
-            border-top-right-radius: 24px;
+            border-top-left-radius: 20px;
+            border-top-right-radius: 20px;
             display: flex;
-            justify-content: center;
+            justify-content: space-around;
             align-items: center;
-            gap: clamp(20px, 10vw, 56px); 
-            padding: 0 24px;
-            padding-bottom: env(safe-area-inset-bottom);
-            box-shadow: 0 -2px 10px rgba(0,0,0,0.05);
-            z-index: 30;
+            padding: 0 10px env(safe-area-inset-bottom) 10px;
+            box-shadow: 0 -2px 15px rgba(0,0,0,0.08);
+            z-index: 1000;
         }
         
         .nav-item {
@@ -89,41 +85,81 @@
             display: flex;
             flex-direction: column;
             align-items: center;
+            justify-content: center;
             color: #8E8E93;
             text-decoration: none;
-            cursor: pointer;
-        }
-        .nav-item i { font-size: 26px; } 
-        .nav-item.active { color: #FF9800; }
-        .nav-item.active::after {
-            content: '';
-            position: absolute;
-            bottom: -6px;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 20px;
-            height: 4px;
-            background: #FF9800;
-            border-radius: 18px;
+            width: 20%;
+            height: 100%;
+            transition: color 0.3s;
         }
         
-        /* 目前位置按鈕修正位置 */
-        .my-location-btn {
+        .nav-item i { font-size: 24px; } 
+
+        /* 選取/懸浮效果 */
+        .nav-item.active, .nav-item:hover { color: #FF9800; }
+        
+        .nav-item.active::after, .nav-item:hover::after {
+            content: '';
             position: absolute;
-            bottom: calc(65px + env(safe-area-inset-bottom) + 15px);
-            right: 24px;
-            width: 48px;
-            height: 48px;
+            bottom: 10px; 
+            width: 18px;
+            height: 4px;
+            background: #FF9800;
+            border-radius: 4px;
+        }
+        
+        /* 右側按鈕群組：精確對齊並縮短距離 */
+        .map-controls-wrapper {
+            position: absolute;
+            right: 12px;
+            /* 修正位置：緊貼導覽列上方 */
+            bottom: calc(75px + env(safe-area-inset-bottom)); 
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px; /* 極短間距，讓定位與縮放幾乎連在一起 */
+            z-index: 500;
+        }
+
+        /* 目前位置按鈕 */
+        .my-location-btn {
+            width: 44px;
+            height: 44px;
             background: white;
             border-radius: 50%;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
             display: flex;
             justify-content: center;
             align-items: center;
             cursor: pointer;
-            z-index: 10;
         }
-        .my-location-btn i { font-size: 24px; color: #FF9800; }
+        .my-location-btn i { font-size: 20px; color: #FF9800; }
+
+        /* 地圖縮放按鈕主題化樣式 */
+        .leaflet-control-zoom {
+            margin: 0 !important;
+            border: none !important;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15) !important;
+        }
+        .leaflet-control-zoom-in, .leaflet-control-zoom-out {
+            background-color: white !important;
+            color: #FF9800 !important;
+            border: none !important;
+            width: 44px !important;
+            height: 44px !important;
+            line-height: 44px !important;
+            font-size: 20px !important;
+            font-weight: bold !important;
+        }
+        .leaflet-control-zoom-in {
+            border-top-left-radius: 10px !important;
+            border-top-right-radius: 10px !important;
+            border-bottom: 1px solid #f0f0f0 !important;
+        }
+        .leaflet-control-zoom-out {
+            border-bottom-left-radius: 10px !important;
+            border-bottom-right-radius: 10px !important;
+        }
 
         @media (min-width: 768px) {
             .search-bar { left: 50%; transform: translateX(-50%); }
@@ -140,18 +176,21 @@
             <i class="fa-solid fa-microphone"></i>
         </div>
         
+        <div class="map-controls-wrapper">
+            <div class="my-location-btn" onclick="flyToHome()">
+                <i class="fa-solid fa-location-crosshairs"></i>
+            </div>
+            <div id="zoom-container"></div>
+        </div>
+        
         <nav class="bottom-nav">
-            <a href="home.html" class="nav-item active"><i class="fa-solid fa-house"></i></a>
+            <a href="index.html" class="nav-item active"><i class="fa-solid fa-house"></i></a>
             <a href="article-post.html" class="nav-item"><i class="fa-solid fa-book"></i></a>
             <a href="#" class="nav-item" onclick="triggerCamera(event)"><i class="fa-solid fa-camera"></i></a>
             <a href="photo_album.html" class="nav-item"><i class="fa-solid fa-image"></i></a>
             <a href="#" onclick="checkLoginStatus()" class="nav-item"><i class="fa-solid fa-user"></i></a>
         </nav>
         
-        <div class="my-location-btn" onclick="flyToHome()">
-            <i class="fa-solid fa-location-crosshairs"></i>
-        </div>
-
         <input type="file" id="input_camera" accept="image/*" capture="environment" style="display: none;">
     </div>
 
@@ -160,35 +199,15 @@
         const map = L.map('mapid', {
             center: [22.7333, 120.2847],
             zoom: 17,
-            zoomControl: false
+            zoomControl: false 
         });
         
         L.control.zoom({ position: 'bottomright' }).addTo(map);
+        
+        const zoomCtrl = document.querySelector('.leaflet-control-zoom');
+        document.getElementById('zoom-container').appendChild(zoomCtrl);
 
-        L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-            attribution: '© OpenStreetMap contributors © CARTO',
-            maxZoom: 20
-        }).addTo(map);
-
-        fetch('https://raw.githubusercontent.com/kiang/taiwan_geojson/master/town.json')
-            .then(response => response.json())
-            .then(data => {
-                L.geoJSON(data, {
-                    style: {
-                        fillColor: '#FFB352',
-                        weight: 1.5,
-                        opacity: 0.8,
-                        color: '#FF9800',
-                        fillOpacity: 0.4
-                    },
-                    onEachFeature: (feature, layer) => {
-                        if (feature.properties?.TOWNNAME) {
-                            layer.bindPopup(feature.properties.TOWNNAME);
-                        }
-                    }
-                }).addTo(map);
-            })
-            .catch(err => console.error('載入鄉鎮區失敗:', err));
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png').addTo(map);
 
         L.circleMarker([22.7333, 120.2847], {
             radius: 10,
@@ -197,41 +216,20 @@
             weight: 2,
             opacity: 1,
             fillOpacity: 0.8
-        }).addTo(map).bindPopup('高雄大學 🎓<br>高雄市楠梓區高雄大學路700號');
+        }).addTo(map).bindPopup('高雄大學 🎓');
         
-        window.addEventListener('resize', () => {
-            setTimeout(() => map.invalidateSize(true), 200);
-        });
-
         function flyToHome() {
-            map.flyTo([22.7333, 120.2847], 17, {
-                animate: true,
-                duration: 1.5
-            });
+            map.flyTo([22.7333, 120.2847], 17, { animate: true, duration: 1.5 });
         }
-    </script>
-    <script>
+
         function checkLoginStatus() {
-            if (localStorage.getItem('isLoggedIn') === 'true') {
-                window.location.href = 'profile.html';
-            } else {
-                window.location.href = 'personal.html';
-            }
+            window.location.href = (localStorage.getItem('isLoggedIn') === 'true') ? 'profile.html' : 'personal.html';
         }
 
         function triggerCamera(event) {
             event.preventDefault(); 
             document.getElementById('input_camera').click();
         }
-
-        document.getElementById('input_camera').addEventListener('change', function(e) {
-            const file = e.target.files[0];
-            if (file) {
-                console.log("照片選取成功:", file.name);
-            }
-        });
     </script>
 </body>
 </html>
-
-
