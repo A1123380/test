@@ -26,7 +26,6 @@
             -webkit-font-smoothing: antialiased; 
         }
         
-        /* 主容器：改用 dvh 確保在手機上底部導覽列不被遮擋 */
         .container {
             position: relative;
             width: 100vw;
@@ -36,7 +35,6 @@
             flex-direction: column;
         }
         
-        /* 地圖：填滿容器 */
         #mapid {
             position: absolute;
             top: 0; left: 0;
@@ -45,13 +43,13 @@
             z-index: 1;
         }
         
-        /* 修正搜尋欄：使用相對寬度防止跑位 */
+        /* 搜尋欄 */
         .search-bar {
             position: absolute;
             top: 74px;
             left: 30px;
-            width: calc(100% - 60px); /* 動態計算寬度 */
-            max-width: 392px;          /* 限制最大寬度 */
+            width: calc(100% - 60px); 
+            max-width: 392px;
             height: 50px;
             background: #E9E9EA;
             border: 1px solid #000000;
@@ -61,26 +59,25 @@
             padding: 0 16px;
             box-shadow: 0px 4px 4px 0px rgba(0,0,0,0.25);
             z-index: 20;
-            transition: all 0.3s ease;
         }
         
         .search-bar i { font-size: 22px; color: #888; flex-shrink: 0; }
         .search-bar input { border: none; background: transparent; margin: 0 8px; flex: 1; font-size: 16px; outline: none; }
-        .search-bar .fa-microphone { cursor: pointer; }
         
-        /* 修正底部導航列：加入安全區域感應 */
+        /* 修正後的底部導航列：高度調降 */
         .bottom-nav {
             position: absolute;
             bottom: 0; left: 0;
             width: 100%;
-            height: calc(84px + env(safe-area-inset-bottom)); /* 自動增加 iPhone 底部高度 */
+            /* 高度從 84px 調降至 72px */
+            height: calc(72px + env(safe-area-inset-bottom)); 
             background: white;
             border-top-left-radius: 24px;
             border-top-right-radius: 24px;
             display: flex;
             justify-content: center;
             align-items: center;
-            gap: clamp(20px, 10vw, 56px); /* 螢幕小時縮小間隔 */
+            gap: clamp(20px, 10vw, 56px); 
             padding: 0 24px;
             padding-bottom: env(safe-area-inset-bottom);
             box-shadow: 0 -2px 10px rgba(0,0,0,0.05);
@@ -95,26 +92,26 @@
             color: #8E8E93;
             text-decoration: none;
             cursor: pointer;
-            transition: color 0.3s;
         }
-        .nav-item i { font-size: 28px; }
+        .nav-item i { font-size: 26px; } /* 圖示稍微縮小一點點以配合高度 */
         .nav-item.active { color: #FF9800; }
         .nav-item.active::after {
             content: '';
             position: absolute;
-            bottom: -8px;
+            bottom: -6px;
             left: 50%;
             transform: translateX(-50%);
-            width: 24px;
+            width: 20px;
             height: 4px;
             background: #FF9800;
             border-radius: 10px;
         }
 
-        /* 目前位置按鈕修正 */
+        /* 目前位置按鈕修正：根據新的 NavBar 高度調整位置 */
         .my-location-btn {
             position: absolute;
-            bottom: calc(104px + env(safe-area-inset-bottom) + 20px);
+            /* 調整為 NavBar 高度 + 16px 間距 */
+            bottom: calc(72px + env(safe-area-inset-bottom) + 16px);
             right: 20px;
             width: 48px;
             height: 48px;
@@ -129,7 +126,6 @@
         }
         .my-location-btn i { font-size: 24px; color: #FF9800; }
 
-        /* 針對桌機/大螢幕的微調 */
         @media (min-width: 768px) {
             .search-bar { left: 50%; transform: translateX(-50%); }
         }
@@ -167,7 +163,6 @@
             zoom: 17,
             zoomControl: false
         });
-        
         L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png').addTo(map);
 
         L.circleMarker([22.7333, 120.2847], {
@@ -181,8 +176,6 @@
         function flyToHome() {
             map.flyTo([22.7333, 120.2847], 17, { animate: true, duration: 1.5 });
         }
-
-        // 監聽視窗縮放，確保地圖不跑位
         window.addEventListener('resize', () => map.invalidateSize());
     </script>
     <script>
@@ -193,17 +186,14 @@
                 window.location.href = 'personal.html';
             }
         }
-
         function triggerCamera(event) {
             event.preventDefault();
             document.getElementById('input_camera').click();
         }
-
         document.getElementById('input_camera').addEventListener('change', function(e) {
             const file = e.target.files[0];
             if (file) {
                 console.log("照片捕捉成功:", file.name);
-                // 後續可在此加入 EXIF 讀取邏輯
             }
         });
     </script>
