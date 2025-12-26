@@ -4,32 +4,30 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Furry Café Map - 主畫面</title>
-    
+   
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="FurryMap">
     <meta name="mobile-web-app-capable" content="yes">
-
     <link rel="apple-touch-icon" href="assets/logo/logo-1.png">
     <link rel="icon" type="image/png" href="assets/logo/logo-1.png">
-
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/MarkerCluster.css" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/MarkerCluster.Default.css" />
-    
+   
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
-        body, html { 
-            height: 100%; 
+        body, html {
+            height: 100%;
             width: 100%;
-            font-family: "Microsoft JhengHei", sans-serif; 
-            overflow: hidden; 
-            background: #ffffff; 
-            -webkit-font-smoothing: antialiased; 
+            font-family: "Microsoft JhengHei", sans-serif;
+            overflow: hidden;
+            background: #ffffff;
+            -webkit-font-smoothing: antialiased;
         }
-        
-        /* 核心修正：將容器改為 fixed 並強行撐滿，解決整個畫面往上縮與底部留白的問題 */
+       
+        /* 核心修正：容器撐滿全屏 */
         .container {
             position: fixed;
             top: 0;
@@ -37,10 +35,10 @@
             right: 0;
             bottom: 0;
             width: 100%;
-            height: 100%; 
+            height: 100%;
             overflow: hidden;
         }
-        
+       
         #mapid {
             position: absolute;
             top: 0; left: 0;
@@ -48,47 +46,48 @@
             height: 100%;
             z-index: 1;
         }
-        
-        /* 完全沿用 old_index.html 的搜尋欄樣式 */
+       
+        /* 搜尋欄 */
         .search-bar {
             position: absolute;
-            top: 60px;                      
-            left: 30px;                     
-            width: calc(100% - 60px);       
-            max-width: 392px;               
-            height: 50px;                   
+            top: 60px;
+            left: 30px;
+            width: calc(100% - 60px);
+            max-width: 392px;
+            height: 50px;
             background: #E9E9EA;
             border: 1px solid #000000;
             border-radius: 100px;
             display: flex;
             align-items: center;
-            padding: 0 16px;                
+            padding: 0 16px;
             box-shadow: 0px 4px 4px 0px rgba(0,0,0,0.25);
             z-index: 20;
             transition: all 0.3s ease;
         }
         .search-bar i { font-size: 22px; color: #888; flex-shrink: 0; }
         .search-bar input { border: none; background: transparent; margin: 0 8px; flex: 1; font-size: 16px; outline: none; }
-        
-        /* 完全沿用 old_index.html 的底部導覽列樣式 */
+       
+        /* 底部導覽列：修正底部留白問題 */
         .bottom-nav {
             position: absolute;
-            bottom: 0; left: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
             width: 100%;
-            height: calc(65px + env(safe-area-inset-bottom)); 
+            height: calc(65px + env(safe-area-inset-bottom, 0px)); /* 只計算一次 */
             background: white;
             border-top-left-radius: 24px;
             border-top-right-radius: 24px;
             display: flex;
             justify-content: center;
             align-items: center;
-            gap: clamp(20px, 10vw, 56px); 
-            padding: 0 24px;
-            padding-bottom: env(safe-area-inset-bottom);
+            gap: clamp(20px, 10vw, 56px);
+            padding: 0 24px env(safe-area-inset-bottom, 0px); /* 只在底部加一次 safe-area */
             box-shadow: 0 -2px 10px rgba(0,0,0,0.05);
             z-index: 30;
         }
-        
+       
         .nav-item {
             position: relative;
             display: flex;
@@ -98,7 +97,7 @@
             text-decoration: none;
             cursor: pointer;
         }
-        .nav-item i { font-size: 26px; } 
+        .nav-item i { font-size: 26px; }
         .nav-item.active { color: #FF9800; }
         .nav-item.active::after {
             content: '';
@@ -111,19 +110,18 @@
             background: #FF9800;
             border-radius: 18px;
         }
-        
-        /* 右側按鈕群組：依照 old_index.html 的邏輯確保位置正確 */
+       
+        /* 右側按鈕群組 */
         .map-controls-wrapper {
             position: absolute;
             right: 12px;
-            bottom: calc(75px + env(safe-area-inset-bottom)); 
+            bottom: calc(75px + env(safe-area-inset-bottom, 0px)); /* 配合 navbar 高度 */
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 4px; 
+            gap: 4px;
             z-index: 500;
         }
-
         .my-location-btn {
             width: 44px;
             height: 44px;
@@ -136,7 +134,6 @@
             cursor: pointer;
         }
         .my-location-btn i { font-size: 20px; color: #FF9800; }
-
         .leaflet-control-zoom {
             margin: 0 !important;
             border: none !important;
@@ -161,8 +158,8 @@
             border-bottom-left-radius: 10px !important;
             border-bottom-right-radius: 10px !important;
         }
-
-        /* 保留動畫效果：使用 margin-top 避免覆蓋定位 */
+       
+        /* 其他樣式保持不變 */
         @keyframes floatIcon {
             0%, 80%, 100% { margin-top: 0; }
             90% { margin-top: -10px; }
@@ -170,14 +167,12 @@
         .floating-icon {
             animation: floatIcon 6s ease-in-out infinite;
         }
-
         .marker-cluster-small, .marker-cluster-small div,
         .marker-cluster-medium, .marker-cluster-medium div,
         .marker-cluster-large, .marker-cluster-large div {
             background-color: rgba(255, 152, 0, 0.6) !important;
             color: white !important;
         }
-
         @media (min-width: 768px) {
             .search-bar { left: 50%; transform: translateX(-50%); }
         }
@@ -186,20 +181,20 @@
 <body>
     <div class="container">
         <div id="mapid"></div>
-        
+       
         <div class="search-bar">
             <i class="fa-solid fa-magnifying-glass"></i>
             <input type="text" placeholder="搜尋餐廳">
             <i class="fa-solid fa-microphone"></i>
         </div>
-        
+       
         <div class="map-controls-wrapper">
             <div class="my-location-btn" onclick="flyToHome()">
                 <i class="fa-solid fa-location-crosshairs"></i>
             </div>
             <div id="zoom-container"></div>
         </div>
-        
+       
         <nav class="bottom-nav">
             <a href="index.html" class="nav-item active"><i class="fa-solid fa-house"></i></a>
             <a href="article-post.html" class="nav-item"><i class="fa-solid fa-book"></i></a>
@@ -207,26 +202,23 @@
             <a href="photo_album.html" class="nav-item"><i class="fa-solid fa-image"></i></a>
             <a href="#" onclick="checkLoginStatus()" class="nav-item"><i class="fa-solid fa-user"></i></a>
         </nav>
-        
+       
         <input type="file" id="input_camera" accept="image/*" capture="environment" style="display: none;">
     </div>
-
     <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/leaflet.markercluster.js"></script>
     <script>
         const map = L.map('mapid', {
             center: [22.7333, 120.2847],
             zoom: 17,
-            zoomControl: false 
+            zoomControl: false
         });
-        
+       
         L.control.zoom({ position: 'bottomright' }).addTo(map);
         const zoomCtrl = document.querySelector('.leaflet-control-zoom');
         document.getElementById('zoom-container').appendChild(zoomCtrl);
-
         L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png').addTo(map);
-
-        // 高雄大學標記
+       
         L.circleMarker([22.7333, 120.2847], {
             radius: 10,
             fillColor: "#FFB352",
@@ -235,23 +227,20 @@
             opacity: 1,
             fillOpacity: 0.8
         }).addTo(map).bindPopup('高雄大學 🎓<br>目前位置');
-
-        // 自定義圖示
+       
         const restaurantIcon = L.icon({
-            iconUrl: 'assets/icon/coordinates.png', 
-            iconSize: [38, 38], 
-            iconAnchor: [19, 38], 
+            iconUrl: 'assets/icon/coordinates.png',
+            iconSize: [38, 38],
+            iconAnchor: [19, 38],
             popupAnchor: [0, -15],
-            className: 'floating-icon' 
+            className: 'floating-icon'
         });
-
-        // 初始化標記聚合組
+       
         const clusters = L.markerClusterGroup({
             showCoverageOnHover: false,
             spiderfyOnMaxZoom: true
         });
-
-        // 餐廳座標數據 (保留您修正後的數據)
+       
         const locations = [
             { name: "沐沐MUMU 茶飲", pos: [22.70350854455539, 120.30130446507042], info: "高雄市楠梓區宏毅一路6號<br>07-3630638" },
             { name: "Bon appétit 葩那貝蒂", pos: [22.736657810967653, 120.32909822442647], info: "高雄市楠梓區土庫一路198號" },
@@ -263,12 +252,10 @@
             { name: "逅巷咖啡定食", pos: [22.669228579277874, 120.30437362257813], info: "高雄市左營區新上街307巷15號" },
             { name: "心滿義廚", pos: [22.66626008061487, 120.30757376490757], info: "高雄市立信路28號" }
         ];
-
         locations.forEach(loc => {
             const marker = L.marker(loc.pos, { icon: restaurantIcon })
                             .bindPopup(`<b>${loc.name}</b><br>${loc.info}`);
             clusters.addLayer(marker);
-
             setTimeout(() => {
                 const iconImg = marker.getElement();
                 if (iconImg) {
@@ -276,22 +263,18 @@
                 }
             }, 100);
         });
-
         map.addLayer(clusters);
-
+       
         function flyToHome() {
             map.flyTo([22.7333, 120.2847], 17, { animate: true, duration: 1.5 });
         }
-
         function checkLoginStatus() {
             window.location.href = (localStorage.getItem('isLoggedIn') === 'true') ? 'profile.html' : 'personal.html';
         }
-
         function triggerCamera(event) {
-            event.preventDefault(); 
+            event.preventDefault();
             document.getElementById('input_camera').click();
         }
-
         document.getElementById('input_camera').addEventListener('change', function(e) {
             if (e.target.files[0]) console.log("照片選取成功:", e.target.files[0].name);
         });
