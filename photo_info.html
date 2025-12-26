@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>照片資訊</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body, html { 
+            height: 100%; width: 100%; 
+            font-family: "Microsoft JhengHei", sans-serif; 
+            background-color: #FFF9EB; 
+            overflow-y: auto; 
+        }
+
+        /* 頂部大圖區 */
+        .photo-header {
+            width: 100%; height: 45vh; position: relative; background: #000;
+        }
+        .display-img { width: 100%; height: 100%; object-fit: cover; }
+        .back-btn { 
+            position: absolute; top: 20px; left: 20px; 
+            font-size: 28px; color: white; text-shadow: 0 2px 4px rgba(0,0,0,0.5); 
+            cursor: pointer; z-index: 10;
+        }
+
+        /* 資訊內容區 */
+        .info-container { padding: 25px 20px; }
+        .title-row { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; }
+        .photo-title { font-size: 28px; font-weight: bold; color: #333; flex: 1; }
+        .article-btn { 
+            background-color: #FFB352; color: white; padding: 10px 18px; 
+            border-radius: 25px; text-decoration: none; font-weight: bold; font-size: 16px;
+            box-shadow: 0 4px 10px rgba(255, 179, 82, 0.3);
+        }
+
+        .detail-item { font-size: 15px; color: #444; margin-bottom: 5px; line-height: 1.5; }
+        .tags-text { color: #FF9800; font-weight: bold; margin-top: 5px; }
+        
+        /* 描述輸入區 */
+        .description-box {
+            margin-top: 20px; border-top: 1px solid #ffeccc; padding-top: 15px;
+        }
+        .desc-label { font-weight: bold; color: #333; margin-bottom: 8px; display: block; }
+        .desc-input {
+            width: 100%; min-height: 100px; background: transparent; border: none;
+            font-size: 16px; color: #555; line-height: 1.6; outline: none; resize: none;
+        }
+
+        /* 底部地圖檢視區 */
+        .map-section { margin-top: 25px; cursor: pointer; }
+        .mini-map-container {
+            width: 100%; height: 150px; border-radius: 18px; overflow: hidden;
+            border: 2px solid #FFB352; box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        .address-bar {
+            background-color: #FFB352; color: white; padding: 10px;
+            text-align: center; border-bottom-left-radius: 18px; border-bottom-right-radius: 18px;
+            font-size: 14px; font-weight: bold; margin-top: -15px; position: relative; z-index: 5;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="photo-header">
+        <div class="back-btn" onclick="history.back()"><i class="fa-solid fa-xmark"></i></div>
+        <img id="mainImg" class="display-img" src="">
+    </div>
+
+    <div class="info-container">
+        <div class="title-row">
+            <h1 class="photo-title" id="pTitle">載入中...</h1>
+            <a href="article-post.html" class="article-btn">撰寫文章</a>
+        </div>
+
+        <div id="pDetails">
+            <div class="detail-item" id="pTime">拍攝時間 ----</div>
+            <div class="detail-item" id="pCoords">緯度：-- 經度：--</div>
+            <div class="detail-item" id="pFileName">檔案名稱：----</div>
+            <div class="tags-text" id="pTags">#標籤讀取中</div>
+        </div>
+
+        <div class="description-box">
+            <span class="desc-label">描述：</span>
+            <textarea class="desc-input" placeholder="在那熱騰騰的餐桌上，香氣四溢的料理總是最能撩動味蕾..."></textarea>
+        </div>
+
+        <div class="map-section" onclick="returnToMainMap()">
+            <div id="miniMap" class="mini-map-container"></div>
+            <div class="address-bar" id="pAddress">正在偵測拍攝地點...</div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+    <script>
+        // 餐廳座標數據 (同 index.html，用於自動分類判定)
+        const restaurants = [
+            { name: "沐沐MUMU 茶飲", pos: [22.7035, 120.3013], tags: "#沐沐, #茶飲, #寵物友善" },
+            { name: "Bon appétit 葩那貝蒂", pos: [22.7366, 120.3290], tags: "#葩那貝蒂, #西餐, #寵物友善" },
+            { name: "究鶴餐館", pos: [22.6592, 120.3067], tags: "#究鶴, #早午餐, #寵物友善" },
+            { name: "鸚鵡螺餐酒館-富國店", pos: [22.6600, 120.3064], tags: "#鸚鵡螺, #餐酒館, #寵物友善" },
+            { name: "ROSA義大利餐廳", pos: [22.6873, 120.3138], tags: "#ROSA, #義式, #寵物友善" }
+        ];
+
+        document.addEventListener('DOMContentLoaded', () => {
+            // 優先讀取剛拍攝的暫存資料，若無則讀取相簿點擊查看的資料
+            let photo = JSON.parse(localStorage.getItem('temp_photo_data'));
+            let isNew = !!photo;
+
+            if (!photo) {
+                photo = JSON.parse(localStorage.getItem('viewing_photo'));
+            }
+
+            if (!photo) {
+                alert("查無照片資訊");
+                history.back();
+                return;
+            }
+
+            // 自動判定最近的餐廳 (簡單演算法)
+            let minDistance = Infinity;
+            let detectedRestaurant = "未知地點";
+            let detectedTags = "#寵物友善";
+
+            restaurants.forEach(res => {
+                const dist = Math.sqrt(Math.pow(res.pos[0] - photo.lat, 2) + Math.pow(res.pos[1] - photo.lng, 2));
+                if (dist < 0.005 && dist < minDistance) { // 500公尺內判定
+                    minDistance = dist;
+                    detectedRestaurant = res.name;
+                    detectedTags = res.tags;
+                }
+            });
+
+            // 更新頁面顯示
+            document.getElementById('mainImg').src = photo.src;
+            document.getElementById('pTitle').textContent = detectedRestaurant;
+            document.getElementById('pTime').textContent = `${photo.date} ${photo.time}`;
+            document.getElementById('pCoords').textContent = `緯度：${parseFloat(photo.lat).toFixed(4)} 經度：${parseFloat(photo.lng).toFixed(4)}`;
+            document.getElementById('pFileName').textContent = `檔案名稱：${photo.name || 'IMG_' + photo.id}`;
+            document.getElementById('pTags').textContent = detectedTags;
+            document.getElementById('pAddress').textContent = detectedRestaurant;
+
+            // 寫回餐廳屬性以便相簿分類
+            photo.restaurant = detectedRestaurant;
+
+            // 初始化小型地圖
+            const miniMap = L.map('miniMap', { zoomControl: false, attributionControl: false }).setView([photo.lat, photo.lng], 16);
+            L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png').addTo(miniMap);
+            L.marker([photo.lat, photo.lng]).addTo(miniMap);
+
+            // 如果是新拍攝的照片，存入正式相簿資料庫並清除暫存
+            if (isNew) {
+                let allPhotos = JSON.parse(localStorage.getItem('all_photos')) || [];
+                allPhotos.push(photo);
+                localStorage.setItem('all_photos', JSON.stringify(allPhotos));
+                localStorage.removeItem('temp_photo_data');
+            }
+            
+            // 存回目前查看的照片資訊
+            window.currentPhoto = photo;
+        });
+
+        function returnToMainMap() {
+            // 點擊地圖時，告知首頁要高亮顯示這張照片
+            localStorage.setItem('highlight_photo', JSON.stringify(window.currentPhoto));
+            window.location.href = 'index.html';
+        }
+    </script>
+</body>
+</html>
