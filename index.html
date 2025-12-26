@@ -10,8 +10,8 @@
     <meta name="apple-mobile-web-app-title" content="FurryMap">
     <meta name="mobile-web-app-capable" content="yes">
 
-    <link rel="apple-touch-icon" href="assets/logo/logo.png">
-    <link rel="icon" type="image/png" href="assets/logo/logo.png">
+    <link rel="apple-touch-icon" href="assets/logo/logo-1.png">
+    <link rel="icon" type="image/png" href="assets/logo/logo-1.png">
 
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
@@ -25,14 +25,17 @@
             width: 100%;
             font-family: "Microsoft JhengHei", sans-serif; 
             overflow: hidden; 
-            background: #ffffff; /* 設為白色防止閃爍 */
+            background: #ffffff; 
             -webkit-font-smoothing: antialiased; 
         }
         
-        /* 修正：使用 fixed 並強行撐滿，解決畫面往上縮與底部留白問題 */
+        /* 修正：將容器改為 fixed 並撐滿，解決整個畫面往上縮與底部留白的問題 */
         .container {
             position: fixed;
-            top: 0; left: 0; right: 0; bottom: 0;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
             width: 100%;
             height: 100%; 
             overflow: hidden;
@@ -46,12 +49,11 @@
             z-index: 1;
         }
         
-        /* 樣式：維持 old_index.html 的搜尋欄風格，並下移避開上方 */
+        /* 樣式修正：完全沿用 old_index.html 的搜尋欄樣式 */
         .search-bar {
             position: absolute;
-            top: calc(env(safe-area-inset-top) + 25px); /* 改為相對安全區域下移 */
-            left: 50%;
-            transform: translateX(-50%);
+            top: 60px;                      
+            left: 30px;                     
             width: calc(100% - 60px);       
             max-width: 392px;               
             height: 50px;                   
@@ -68,12 +70,12 @@
         .search-bar i { font-size: 22px; color: #888; flex-shrink: 0; }
         .search-bar input { border: none; background: transparent; margin: 0 8px; flex: 1; font-size: 16px; outline: none; }
         
-        /* 修正：縮減高度 (52px)，並解決佔比過大問題 */
+        /* 樣式修正：完全沿用 old_index.html 的底部導覽列樣式 */
         .bottom-nav {
             position: absolute;
             bottom: 0; left: 0;
             width: 100%;
-            height: calc(52px + env(safe-area-inset-bottom)); 
+            height: calc(65px + env(safe-area-inset-bottom)); 
             background: white;
             border-top-left-radius: 24px;
             border-top-right-radius: 24px;
@@ -110,11 +112,11 @@
             border-radius: 18px;
         }
         
-        /* 修正：右側按鈕配合 Navbar 高度下移 */
+        /* 右側按鈕群組：鎖定在 Navbar 上方 */
         .map-controls-wrapper {
             position: absolute;
             right: 12px;
-            bottom: calc(62px + env(safe-area-inset-bottom)); 
+            bottom: calc(75px + env(safe-area-inset-bottom)); 
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -160,6 +162,7 @@
             border-bottom-right-radius: 10px !important;
         }
 
+        /* 偶爾浮動動畫 */
         @keyframes floatIcon {
             0%, 80%, 100% { margin-top: 0; }
             90% { margin-top: -10px; }
@@ -168,6 +171,7 @@
             animation: floatIcon 6s ease-in-out infinite;
         }
 
+        /* 聚合圖標顏色自定義 */
         .marker-cluster-small, .marker-cluster-small div,
         .marker-cluster-medium, .marker-cluster-medium div,
         .marker-cluster-large, .marker-cluster-large div {
@@ -223,6 +227,7 @@
 
         L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png').addTo(map);
 
+        // 我的位置 (圓點)
         L.circleMarker([22.7333, 120.2847], {
             radius: 10,
             fillColor: "#FFB352",
@@ -232,6 +237,7 @@
             fillOpacity: 0.8
         }).addTo(map).bindPopup('高雄大學 🎓<br>目前位置');
 
+        // 自定義圖示
         const restaurantIcon = L.icon({
             iconUrl: 'assets/icon/coordinates.png', 
             iconSize: [38, 38], 
@@ -240,12 +246,13 @@
             className: 'floating-icon' 
         });
 
+        // 初始化聚合圖層
         const clusters = L.markerClusterGroup({
             showCoverageOnHover: false,
             spiderfyOnMaxZoom: true
         });
 
-        // 餐廳座標數據 (保留您自行修正後的數據)
+        // 餐廳座標：完全保留您辛苦修正後的精確數據
         const locations = [
             { name: "沐沐MUMU 茶飲", pos: [22.70350854455539, 120.30130446507042], info: "高雄市楠梓區宏毅一路6號<br>07-3630638" },
             { name: "Bon appétit 葩那貝蒂", pos: [22.736657810967653, 120.32909822442647], info: "高雄市楠梓區土庫一路198號" },
