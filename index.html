@@ -43,47 +43,44 @@
             z-index: 1;
         }
         
-        /* 搜尋欄 - 具備毛玻璃效果 */
+        /* 樣式修正：沿用 old_index.html 的搜尋欄樣式 */
         .search-bar {
             position: absolute;
-            top: calc(env(safe-area-inset-top) + 15px);
-            left: 50%;
-            transform: translateX(-50%);
-            width: calc(100% - 60px);       
+            top: 60px;                      /* 避開動態島 */
+            left: 30px;                     
+            width: calc(100% - 60px);       /* 相對寬度 */
             max-width: 392px;               
             height: 50px;                   
-            background: rgba(240, 240, 240, 0.9);
-            border: 1px solid rgba(0,0,0,0.2);
+            background: #E9E9EA;
+            border: 1px solid #000000;
             border-radius: 100px;
             display: flex;
             align-items: center;
             padding: 0 16px;                
-            box-shadow: 0px 4px 10px rgba(0,0,0,0.1);
+            box-shadow: 0px 4px 4px 0px rgba(0,0,0,0.25);
             z-index: 20;
-            backdrop-filter: blur(5px);
+            transition: all 0.3s ease;
         }
-        
+        .search-bar i { font-size: 22px; color: #888; flex-shrink: 0; }
         .search-bar input { border: none; background: transparent; margin: 0 8px; flex: 1; font-size: 16px; outline: none; }
-        .search-bar i { font-size: 20px; color: #888; }
         
-        /* 底部導覽列 - 修正白底問題 */
+        /* 樣式修正：沿用 old_index.html 的底部導覽列樣式 */
         .bottom-nav {
             position: absolute;
             bottom: 0; left: 0;
             width: 100%;
             height: calc(65px + env(safe-area-inset-bottom)); 
-            /* 修正：將純白改為半透明灰色並加上毛玻璃，使地圖背景隱約透出，解決生硬白塊感 */
-            background: rgba(248, 248, 248, 0.85); 
-            border-top-left-radius: 20px;
-            border-top-right-radius: 20px;
+            background: white;
+            border-top-left-radius: 24px;
+            border-top-right-radius: 24px;
             display: flex;
-            justify-content: space-around;
+            justify-content: center;
             align-items: center;
-            padding: 0 10px env(safe-area-inset-bottom) 10px;
-            box-shadow: 0 -2px 15px rgba(0,0,0,0.08);
-            z-index: 1000;
-            backdrop-filter: blur(15px);
-            -webkit-backdrop-filter: blur(15px);
+            gap: clamp(20px, 10vw, 56px); 
+            padding: 0 24px;
+            padding-bottom: env(safe-area-inset-bottom);
+            box-shadow: 0 -2px 10px rgba(0,0,0,0.05);
+            z-index: 30;
         }
         
         .nav-item {
@@ -91,29 +88,25 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            justify-content: center;
             color: #8E8E93;
             text-decoration: none;
-            width: 20%;
-            height: 100%;
-            transition: color 0.3s;
+            cursor: pointer;
         }
-        
-        .nav-item i { font-size: 24px; } 
-        .nav-item.active, .nav-item:hover { color: #FF9800; }
-        
-        /* 選取後的底線指標 */
-        .nav-item.active::after, .nav-item:hover::after {
+        .nav-item i { font-size: 26px; } 
+        .nav-item.active { color: #FF9800; }
+        .nav-item.active::after {
             content: '';
             position: absolute;
-            bottom: 10px; 
-            width: 18px;
+            bottom: -6px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 20px;
             height: 4px;
             background: #FF9800;
-            border-radius: 4px;
+            border-radius: 18px;
         }
         
-        /* 右側按鈕群組 */
+        /* 保留：右側按鈕群組樣式 */
         .map-controls-wrapper {
             position: absolute;
             right: 12px;
@@ -138,7 +131,6 @@
         }
         .my-location-btn i { font-size: 20px; color: #FF9800; }
 
-        /* 地圖縮放按鈕樣式 */
         .leaflet-control-zoom {
             margin: 0 !important;
             border: none !important;
@@ -164,17 +156,16 @@
             border-bottom-right-radius: 10px !important;
         }
 
-        /* 偶爾浮動動畫 - 使用 margin-top 避免覆蓋 transform */
+        /* 保留：浮動圖示動畫 */
         @keyframes floatIcon {
             0%, 80%, 100% { margin-top: 0; }
             90% { margin-top: -10px; }
         }
-
         .floating-icon {
             animation: floatIcon 6s ease-in-out infinite;
         }
 
-        /* 聚合圓圈主題化 */
+        /* 保留：聚合圖標樣式 */
         .marker-cluster-small, .marker-cluster-small div,
         .marker-cluster-medium, .marker-cluster-medium div,
         .marker-cluster-large, .marker-cluster-large div {
@@ -230,7 +221,7 @@
 
         L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png').addTo(map);
 
-        // 高雄大學標記 (維持圓點)
+        // 高雄大學標記
         L.circleMarker([22.7333, 120.2847], {
             radius: 10,
             fillColor: "#FFB352",
@@ -240,12 +231,12 @@
             fillOpacity: 0.8
         }).addTo(map).bindPopup('高雄大學 🎓<br>目前位置');
 
-        // 自定義餐廳圖示
+        // 餐廳圖示
         const restaurantIcon = L.icon({
             iconUrl: 'assets/icon/coordinates.png', 
             iconSize: [38, 38], 
             iconAnchor: [19, 38], 
-            popupAnchor: [0, -15], // 氣泡框位置下降
+            popupAnchor: [0, -15],
             className: 'floating-icon' 
         });
 
@@ -255,6 +246,7 @@
             spiderfyOnMaxZoom: true
         });
 
+        // 餐廳座標數據（保留您修正後的精確經緯度）
         const locations = [
             { name: "沐沐MUMU 茶飲", pos: [22.70350854455539, 120.30130446507042], info: "高雄市楠梓區宏毅一路6號<br>07-3630638<br>寵物：犬,貓,其他,不限" },
             { name: "Bon appétit 葩那貝蒂", pos: [22.736657810967653, 120.32909822442647], info: "高雄市楠梓區土庫一路198號<br>07-3582280<br>寵物：犬,貓,其他" },
@@ -272,7 +264,6 @@
                             .bindPopup(`<b>${loc.name}</b><br>${loc.info}`);
             clusters.addLayer(marker);
 
-            // 隨機延遲使浮動更自然
             setTimeout(() => {
                 const iconImg = marker.getElement();
                 if (iconImg) {
