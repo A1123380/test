@@ -22,16 +22,23 @@
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body, html { 
             height: 100%; 
+            width: 100%;
             font-family: "Microsoft JhengHei", sans-serif; 
             overflow: hidden; 
-            background: #f5f5f5; 
+            /* 修正：背景設為白色，確保萬一有極小位移也不會看到異色底 */
+            background: #ffffff; 
             -webkit-font-smoothing: antialiased; 
         }
         
+        /* 修正：將容器改為 fixed 定位並撐滿，解決整個畫面往上縮的問題 */
         .container {
-            position: relative;
-            width: 100vw;
-            height: 100dvh; 
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            width: 100%;
+            height: 100%; 
             overflow: hidden;
         }
         
@@ -43,12 +50,12 @@
             z-index: 1;
         }
         
-        /* 樣式修正：沿用 old_index.html 的搜尋欄樣式 */
+        /* 保持您要求的 Search Bar 樣式 */
         .search-bar {
             position: absolute;
-            top: 60px;                      /* 避開動態島 */
+            top: 60px;
             left: 30px;                     
-            width: calc(100% - 60px);       /* 相對寬度 */
+            width: calc(100% - 60px);
             max-width: 392px;               
             height: 50px;                   
             background: #E9E9EA;
@@ -64,11 +71,12 @@
         .search-bar i { font-size: 22px; color: #888; flex-shrink: 0; }
         .search-bar input { border: none; background: transparent; margin: 0 8px; flex: 1; font-size: 16px; outline: none; }
         
-        /* 樣式修正：沿用 old_index.html 的底部導覽列樣式 */
+        /* 保持您要求的 Navbar 樣式，僅微調高度佔比 */
         .bottom-nav {
             position: absolute;
             bottom: 0; left: 0;
             width: 100%;
+            /* 使用您喜歡的 65px 基礎高度，加上安全區域 */
             height: calc(65px + env(safe-area-inset-bottom)); 
             background: white;
             border-top-left-radius: 24px;
@@ -78,6 +86,7 @@
             align-items: center;
             gap: clamp(20px, 10vw, 56px); 
             padding: 0 24px;
+            /* 修正：確保內容靠下但避開 Home Bar */
             padding-bottom: env(safe-area-inset-bottom);
             box-shadow: 0 -2px 10px rgba(0,0,0,0.05);
             z-index: 30;
@@ -106,10 +115,11 @@
             border-radius: 18px;
         }
         
-        /* 保留：右側按鈕群組樣式 */
+        /* 右側按鈕群組 */
         .map-controls-wrapper {
             position: absolute;
             right: 12px;
+            /* 修正：配合 Navbar 高度讓按鈕緊貼上方 */
             bottom: calc(75px + env(safe-area-inset-bottom)); 
             display: flex;
             flex-direction: column;
@@ -156,7 +166,6 @@
             border-bottom-right-radius: 10px !important;
         }
 
-        /* 保留：浮動圖示動畫 */
         @keyframes floatIcon {
             0%, 80%, 100% { margin-top: 0; }
             90% { margin-top: -10px; }
@@ -165,7 +174,6 @@
             animation: floatIcon 6s ease-in-out infinite;
         }
 
-        /* 保留：聚合圖標樣式 */
         .marker-cluster-small, .marker-cluster-small div,
         .marker-cluster-medium, .marker-cluster-medium div,
         .marker-cluster-large, .marker-cluster-large div {
@@ -221,7 +229,6 @@
 
         L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png').addTo(map);
 
-        // 高雄大學標記
         L.circleMarker([22.7333, 120.2847], {
             radius: 10,
             fillColor: "#FFB352",
@@ -231,7 +238,6 @@
             fillOpacity: 0.8
         }).addTo(map).bindPopup('高雄大學 🎓<br>目前位置');
 
-        // 餐廳圖示
         const restaurantIcon = L.icon({
             iconUrl: 'assets/icon/coordinates.png', 
             iconSize: [38, 38], 
@@ -240,23 +246,21 @@
             className: 'floating-icon' 
         });
 
-        // 初始化聚合組
         const clusters = L.markerClusterGroup({
             showCoverageOnHover: false,
             spiderfyOnMaxZoom: true
         });
 
-        // 餐廳座標數據（保留您修正後的精確經緯度）
         const locations = [
-            { name: "沐沐MUMU 茶飲", pos: [22.70350854455539, 120.30130446507042], info: "高雄市楠梓區宏毅一路6號<br>07-3630638<br>寵物：犬,貓,其他,不限" },
-            { name: "Bon appétit 葩那貝蒂", pos: [22.736657810967653, 120.32909822442647], info: "高雄市楠梓區土庫一路198號<br>07-3582280<br>寵物：犬,貓,其他" },
-            { name: "究鶴餐館", pos: [22.659232089345057, 120.30670308024811], info: "高雄市左營區富國路98號<br>07-5508648<br>寵物：犬,貓,其他,不限" },
-            { name: "鸚鵡螺餐酒館-富國店", pos: [22.660084586531575, 120.30648179558894], info: "高雄市左營區富國路101號<br>0986-868117<br>寵物：犬,貓,其他,不限" },
-            { name: "ROSA義大利餐廳", pos: [22.687341270147343, 120.31386639374334], info: "高雄市左營區華夏路1422號<br>07-3101950<br>寵物：犬,貓,其他,不限" },
-            { name: "貓之家俱樂部", pos: [22.66880977978303, 120.29994138209479], info: "高雄市左營區新勝街26號<br>07-5869745 / 09-63363038<br>寵物：犬,貓" },
-            { name: "萊Bar音樂餐酒館", pos: [22.67991127626432, 120.31122636675437], info: "高雄市左營區文自路５７１號<br>07-3450509<br>寵物：犬,貓" },
-            { name: "逅巷咖啡定食", pos: [22.669228579277874, 120.30437362257813], info: "高雄市左營區新上街307巷15號<br>09-89621756<br>寵物：犬,貓" },
-            { name: "心滿義廚", pos: [22.66626008061487, 120.30757376490757], info: "高雄市左營區立信路28號<br>07-5506865<br>寵物：犬,貓,其他" }
+            { name: "沐沐MUMU 茶飲", pos: [22.70350854455539, 120.30130446507042], info: "高雄市楠梓區宏毅一路6號<br>07-3630638" },
+            { name: "Bon appétit 葩那貝蒂", pos: [22.736657810967653, 120.32909822442647], info: "高雄市楠梓區土庫一路198號" },
+            { name: "究鶴餐館", pos: [22.659232089345057, 120.30670308024811], info: "高雄市左營區富國路98號" },
+            { name: "鸚鵡螺餐酒館-富國店", pos: [22.660084586531575, 120.30648179558894], info: "高雄市左營區富國路101號" },
+            { name: "ROSA義大利餐廳", pos: [22.687341270147343, 120.31386639374334], info: "高雄市左營區華夏路1422號" },
+            { name: "貓之家俱樂部", pos: [22.66880977978303, 120.29994138209479], info: "高雄市左營區新勝街26號" },
+            { name: "萊Bar音樂餐酒館", pos: [22.67991127626432, 120.31122636675437], info: "高雄市左營區文自路５７１號" },
+            { name: "逅巷咖啡定食", pos: [22.669228579277874, 120.30437362257813], info: "高雄市左營區新上街307巷15號" },
+            { name: "心滿義廚", pos: [22.66626008061487, 120.30757376490757], info: "高雄市左營區立信路28號" }
         ];
 
         locations.forEach(loc => {
