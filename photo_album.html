@@ -88,7 +88,6 @@
             z-index: 1000; backdrop-filter: blur(5px);
         }
 
-        /* 新增相簿彈窗 */
         .add-modal {
             background: #FFF0D1; width: 90%; max-width: 380px; border-radius: 24px;
             position: relative; padding: 30px 25px; text-align: center;
@@ -114,7 +113,6 @@
             border: none; border-radius: 30px; font-size: 18px; font-weight: bold; cursor: pointer;
         }
 
-        /* 搜尋彈窗（加入取消按鈕） */
         .search-modal {
             background: #FFF0D1; width: 90%; max-width: 380px; border-radius: 24px;
             position: relative; padding: 30px 25px; text-align: center;
@@ -123,7 +121,6 @@
             position: absolute; top: 15px; right: 15px; font-size: 24px; color: #666; cursor: pointer;
         }
 
-        /* 編輯選單 */
         .edit-menu {
             position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%);
             background: white; border-radius: 20px; padding: 10px 20px;
@@ -163,9 +160,7 @@
             </div>
         </div>
 
-        <div class="album-list" id="albumContainer">
-            <!-- default 模板會在 JS 中動態生成 -->
-        </div>
+        <div class="album-list" id="albumContainer"></div>
 
         <div class="no-result" id="noResult">
             <div>沒有結果</div>
@@ -228,16 +223,26 @@
                 }
             };
 
-            document.getElementById('addBtn').onclick = () => document.getElementById('addModal').style.display = 'flex';
-            document.getElementById('closeAdd').onclick = () => document.getElementById('addModal').style.display = 'none';
+            document.getElementById('addBtn').onclick = () => {
+                document.getElementById('addModal').style.display = 'flex';
+                document.getElementById('newAlbumName').value = '';
+                document.getElementById('previewImg').style.display = 'none';
+                document.querySelector('#previewArea i').style.display = 'flex';
+                window.tempCoverSrc = null;
+            };
+            document.getElementById('closeAdd').onclick = () => {
+                document.getElementById('addModal').style.display = 'none';
+            };
             document.getElementById('previewArea').onclick = chooseCover;
             document.getElementById('confirmAdd').onclick = createAlbum;
 
-            document.getElementById('searchBtn').onclick = () => document.getElementById('searchModal').style.display = 'flex';
+            document.getElementById('searchBtn').onclick = () => {
+                document.getElementById('searchModal').style.display = 'flex';
+                document.getElementById('searchInput').value = '';
+            };
             document.getElementById('cancelSearch').onclick = () => {
                 document.getElementById('searchModal').style.display = 'none';
-                document.getElementById('searchInput').value = '';
-                loadAlbums(); // 取消搜尋恢復全部
+                loadAlbums(); // 取消搜尋時恢復全部
             };
             document.getElementById('confirmSearch').onclick = () => {
                 const query = document.getElementById('searchInput').value.trim().toLowerCase();
@@ -271,27 +276,31 @@
                     restaurantMap[p.restaurant].push(p);
                 }
             });
-            Object.entries(restaurantMap).forEach(([name, photos]) => renderAlbum(name, photos, 'restaurant', covers[name]));
+            Object.entries(restaurantMap).forEach(([name, photos]) => {
+                renderAlbum(name, photos, 'restaurant', covers[name]);
+            });
 
-            // 自定義
+            // 自定義相簿
             customAlbums.forEach(name => {
                 const photos = allPhotos.filter(p => p.customAlbum === name);
                 renderAlbum(name, photos, 'custom', covers[name]);
             });
 
-            // 過濾
-            let visible = 0;
+            // 搜尋過濾
+            let visibleCount = 0;
             document.querySelectorAll('.album-card').forEach(card => {
                 const title = card.querySelector('.album-title').textContent.toLowerCase();
                 const tags = (card.dataset.tags || '').toLowerCase();
                 const match = filter === '' || title.includes(filter) || tags.includes(filter);
                 card.style.display = match ? 'flex' : 'none';
-                if (match) visible++;
+                if (match) visibleCount++;
             });
 
-            const showNo = visible === 0 && filter !== '';
-            noResult.classList.toggle('show', showNo);
-            if (showNo) noResult.querySelector('div:nth-child(2)').textContent = `沒有「${filter}」的結果，請嘗試新的搜尋項目`;
+            const showNoResult = visibleCount === 0 && filter !== '';
+            noResult.classList.toggle('show', showNoResult);
+            if (showNoResult) {
+                noResult.querySelector('div:nth-child(2)').textContent = `沒有「${filter}」的結果，請嘗試新的搜尋項目`;
+            }
         }
 
         function renderAlbum(name, photos, type, customCover) {
@@ -306,7 +315,7 @@
 
             const thumbSrc = customCover || (photos.length > 0 ? photos[photos.length - 1].src : '');
             const thumb = thumbSrc 
-                ? `<img src="${thumbSrc}" class="album-thumb">`
+                ? `<img src="${thumbSrc}" class="album-thumb" onerror="this.src=''; this.parentNode.classList.add('default-icon'); this.outerHTML='<i class=fa-solid fa-image></i>'">`
                 : `<div class="album-thumb default-icon"><i class="fa-solid fa-image"></i></div>`;
 
             card.innerHTML = `
@@ -341,9 +350,9 @@
             const menu = document.getElementById('editMenu');
             menu.style.display = selectedAlbums.length > 0 ? 'flex' : 'none';
 
-            const single = selectedAlbums.length === 1;
-            document.getElementById('menuRename').disabled = !single;
-            document.getElementById('menuChangeCover').disabled = !single;
+            const isSingle = selectedAlbums.length === 1;
+            document.getElementById('menuRename').disabled = !isSingle;
+            document.getElementById('menuChangeCover').disabled = !isSingle;
         }
 
         function clearSelection() {
@@ -374,10 +383,16 @@
 
         function createAlbum() {
             const name = document.getElementById('newAlbumName').value.trim();
-            if (!name) return alert('請輸入名稱');
+            if (!name) {
+                alert('請輸入相簿名稱');
+                return;
+            }
 
             const custom = JSON.parse(localStorage.getItem('custom_albums')) || [];
-            if (custom.includes(name)) return alert('名稱已存在');
+            if (custom.includes(name)) {
+                alert('相簿名稱已存在');
+                return;
+            }
 
             custom.push(name);
             localStorage.setItem('custom_albums', JSON.stringify(custom));
@@ -392,7 +407,79 @@
             document.getElementById('addModal').style.display = 'none';
         }
 
-        // 其他 rename / changeCover / delete 邏輯保持不變（略，同前版）
+        function renameSelected() {
+            if (selectedAlbums.length !== 1) return;
+            const oldName = selectedAlbums[0];
+            const newName = prompt('輸入新名稱：', oldName);
+            if (!newName || newName === oldName) return;
+            if (getAllAlbums().includes(newName)) {
+                alert('名稱已存在');
+                return;
+            }
+
+            let photos = JSON.parse(localStorage.getItem('all_photos')) || [];
+            photos.forEach(p => {
+                if (p.customAlbum === oldName) p.customAlbum = newName;
+            });
+            localStorage.setItem('all_photos', JSON.stringify(photos));
+
+            let custom = JSON.parse(localStorage.getItem('custom_albums')) || [];
+            custom = custom.map(n => n === oldName ? newName : n);
+            localStorage.setItem('custom_albums', JSON.stringify(custom));
+
+            const covers = JSON.parse(localStorage.getItem('album_covers')) || {};
+            if (covers[oldName]) {
+                covers[newName] = covers[oldName];
+                delete covers[oldName];
+                localStorage.setItem('album_covers', JSON.stringify(covers));
+            }
+
+            loadAlbums();
+            clearSelection();
+        }
+
+        function changeCoverSelected() {
+            if (selectedAlbums.length !== 1) return;
+            chooseCover();
+            if (window.tempCoverSrc) {
+                const name = selectedAlbums[0];
+                const covers = JSON.parse(localStorage.getItem('album_covers')) || {};
+                covers[name] = window.tempCoverSrc;
+                localStorage.setItem('album_covers', JSON.stringify(covers));
+                loadAlbums();
+            }
+        }
+
+        function deleteSelected() {
+            if (selectedAlbums.length === 0) return;
+            if (!confirm(`確定刪除 ${selectedAlbums.length} 個相簿？照片將回到 default`)) return;
+
+            let custom = JSON.parse(localStorage.getItem('custom_albums')) || [];
+            let photos = JSON.parse(localStorage.getItem('all_photos')) || [];
+            let covers = JSON.parse(localStorage.getItem('album_covers')) || {};
+
+            selectedAlbums.forEach(name => {
+                custom = custom.filter(n => n !== name);
+                photos.forEach(p => {
+                    if (p.customAlbum === name) delete p.customAlbum;
+                });
+                delete covers[name];
+            });
+
+            localStorage.setItem('custom_albums', JSON.stringify(custom));
+            localStorage.setItem('all_photos', JSON.stringify(photos));
+            localStorage.setItem('album_covers', JSON.stringify(covers));
+
+            loadAlbums();
+            clearSelection();
+        }
+
+        function getAllAlbums() {
+            const photos = JSON.parse(localStorage.getItem('all_photos')) || [];
+            const restaurants = [...new Set(photos.map(p => p.restaurant).filter(Boolean))];
+            const custom = JSON.parse(localStorage.getItem('custom_albums')) || [];
+            return ['default', ...restaurants, ...custom];
+        }
 
         loadAlbums();
     </script>
