@@ -140,14 +140,14 @@
         }
         .my-location-btn i { font-size: 20px; color: #FF9800; }
 
-        /* 拍照確認介面 */
+        /* 拍照確認介面 - 加強點擊區域 */
         .capture-overlay {
             position: absolute;
             top: 0; left: 0; right: 0; bottom: 0;
             background: black;
             display: none;
             flex-direction: column;
-            z-index: 100;
+            z-index: 1000;
         }
         .capture-preview {
             flex: 1;
@@ -163,22 +163,26 @@
         .capture-actions {
             display: flex;
             justify-content: space-between;
-            padding: 20px;
-            padding-bottom: calc(20px + env(safe-area-inset-bottom));
+            padding: 30px 40px;
+            padding-bottom: calc(30px + env(safe-area-inset-bottom));
+            background: black;
+            z-index: 1001;
         }
         .capture-btn {
             background: rgba(255,255,255,0.9);
             color: #333;
-            padding: 12px 30px;
+            padding: 14px 40px;
             border-radius: 30px;
             font-size: 18px;
             font-weight: bold;
             cursor: pointer;
+            min-width: 120px;
+            text-align: center;
         }
         .retake-btn { background: rgba(255,255,255,0.9); }
         .use-btn { background: #FFB352; color: white; }
 
-        /* 照片標記 ICON（簡單圓形） */
+        /* 照片標記 ICON（簡單相機圖示） */
         .photo-marker-simple {
             background: white;
             border: 3px solid #FF9800;
@@ -309,7 +313,6 @@
         });
         map.addLayer(photoClusters);
 
-        // 簡單照片 ICON
         const simplePhotoIcon = L.divIcon({
             html: `<div class="photo-marker-simple"><i class="fa-solid fa-camera"></i></div>`,
             iconSize: [36, 36],
@@ -364,7 +367,6 @@
 
         let pendingPhotoData = null;
 
-        // 拍照處理
         document.getElementById('input_camera').addEventListener('change', async function(e) {
             const file = e.target.files[0];
             if (!file) return;
@@ -381,15 +383,14 @@
             }
 
             let blob = file;
-            let fileName = file.name; // 保留原檔名（.HEIC）
+            let fileName = file.name;
 
             if (file.type === "image/heic" || file.type === "image/heif" || /\.(heic|heif)$/i.test(file.name)) {
                 try {
                     const converted = await heic2any({ blob: file, toType: "image/jpeg", quality: 0.94 });
                     blob = Array.isArray(converted) ? converted[0] : converted;
-                    // 檔名保持 .HEIC
                 } catch (err) {
-                    console.error("HEIC 轉換失敗，使用原檔", err);
+                    console.error("HEIC 轉換失敗", err);
                 }
             }
 
@@ -398,7 +399,7 @@
                 pendingPhotoData = {
                     id: Date.now(),
                     src: event.target.result,
-                    name: fileName, // 保留原檔名
+                    name: fileName,
                     date: new Date().toLocaleDateString('zh-TW'),
                     time: new Date().toLocaleTimeString('zh-TW', {hour: '2-digit', minute:'2-digit'}),
                     lat: window.currentCapturePos.lat,
@@ -413,12 +414,15 @@
             this.value = '';
         });
 
-        document.getElementById('retakeBtn').onclick = () => {
+        // 加強按鈕點擊（防冒泡）
+        document.getElementById('retakeBtn').onclick = (e) => {
+            e.stopPropagation();
             document.getElementById('captureOverlay').style.display = 'none';
             pendingPhotoData = null;
         };
 
-        document.getElementById('usePhotoBtn').onclick = () => {
+        document.getElementById('usePhotoBtn').onclick = (e) => {
+            e.stopPropagation();
             if (!pendingPhotoData) return;
 
             // 存入正式資料庫
@@ -432,9 +436,9 @@
             // 更新地圖標記
             loadPhotoMarkers();
 
-            // 關閉確認介面並跳轉
+            // 關閉並強制跳轉
             document.getElementById('captureOverlay').style.display = 'none';
-            window.location.href = 'photo_info.html';
+            location.replace('photo_info.html');
         };
 
         window.addEventListener('load', function() {
