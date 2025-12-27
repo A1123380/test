@@ -18,7 +18,7 @@
         .photo-header {
             width: 100%; height: 45vh; position: relative; background: #000;
         }
-        .display-img { width: 100%; height: 100%; object-fit: cover; }
+        .display-img { width: 100%; height: 100%; object-fit: contain; background: #000; }
         .back-btn { 
             position: absolute; top: 20px; left: 20px; 
             font-size: 28px; color: white; text-shadow: 0 2px 4px rgba(0,0,0,0.5); 
@@ -26,17 +26,23 @@
         }
 
         .info-container { padding: 25px 20px; }
-        .title-row { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; }
+        .title-row { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 15px; }
         .photo-title { font-size: 28px; font-weight: bold; color: #333; flex: 1; }
-        .article-btn { 
-            background-color: #FFB352; color: white; padding: 10px 18px; 
-            border-radius: 25px; text-decoration: none; font-weight: bold; font-size: 16px;
-            box-shadow: 0 4px 10px rgba(255, 179, 82, 0.3);
+
+        .detail-item { 
+            font-size: 15px; color: #444; margin-bottom: 12px; line-height: 1.5; 
+            word-break: break-all;
+        }
+        .detail-label { font-weight: bold; color: #666; margin-right: 8px; }
+
+        /* 標籤小按鈕樣式 */
+        .tags-container { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 5px; }
+        .tag-btn {
+            background: #FFF0D1; color: #FF9800; padding: 6px 14px;
+            border: 1.5px solid #FFB352; border-radius: 20px;
+            font-size: 14px; font-weight: bold; white-space: nowrap;
         }
 
-        .detail-item { font-size: 15px; color: #444; margin-bottom: 5px; line-height: 1.5; }
-        .tags-text { color: #FF9800; font-weight: bold; margin-top: 5px; }
-        
         .description-box {
             margin-top: 20px; border-top: 1px solid #ffeccc; padding-top: 15px;
         }
@@ -76,11 +82,22 @@
             <div class="photo-title" id="pTitle">載入中...</div>
         </div>
 
-        <div class="detail-item" id="pTime"></div>
-        <div class="detail-item" id="pCoords"></div>
-        <div class="detail-item" id="pFileName"></div>
-        <div class="detail-item">標籤：<span id="pTags">#寵物友善</span></div>
-        <div class="detail-item">地點：<span id="pAddress">未知地點</span></div>
+        <div class="detail-item">
+            <span class="detail-label">拍攝時間：</span><span id="pTime"></span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">座標：</span><span id="pCoords"></span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">檔案名稱：</span><span id="pFileName"></span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">標籤：</span>
+            <div class="tags-container" id="pTags"></div>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">地點：</span><span id="pAddress">未知地點</span>
+        </div>
 
         <div class="description-box">
             <div class="desc-label">描述</div>
@@ -101,12 +118,12 @@
         let photo = null;
         const isNew = localStorage.getItem('temp_photo_data') !== null;
 
-        // 餐廳資料（請自行補齊你的所有餐廳座標與名稱）
+        // 餐廳資料（請補齊你的餐廳座標與名稱）
         const restaurants = [
-            { name: "Luffy Cafe 相簿", pos: [22.7333, 120.2847], tags: "#寵物友善 #狗狗" },
-            { name: "沐沐MUMU 茶飲", pos: [22.70350854455539, 120.30130446507042], tags: "#寵物友善" },
-            { name: "Bon appétit 葩那貝蒂", pos: [22.736657810967653, 120.32909822442647], tags: "#寵物友善" },
-            // ... 其餘餐廳
+            { name: "Luffy Cafe 相簿", pos: [22.7333, 120.2847], tags: ["#寵物友善", "#狗狗"] },
+            { name: "沐沐MUMU 茶飲", pos: [22.70350854455539, 120.30130446507042], tags: ["#寵物友善"] },
+            { name: "Bon appétit 葩那貝蒂", pos: [22.736657810967653, 120.32909822442647], tags: ["#寵物友善"] },
+            // ... 其他餐廳
         ];
 
         window.onload = () => {
@@ -121,11 +138,11 @@
             // 自動偵測最近餐廳
             let minDistance = Infinity;
             let detectedRestaurant = "未知地點";
-            let detectedTags = "#寵物友善";
+            let detectedTags = ["#寵物友善"];
 
             restaurants.forEach(res => {
                 const dist = Math.hypot(res.pos[0] - photo.lat, res.pos[1] - photo.lng);
-                if (dist < 0.01 && dist < minDistance) { // 約1km內
+                if (dist < 0.01 && dist < minDistance) {
                     minDistance = dist;
                     detectedRestaurant = res.name;
                     detectedTags = res.tags;
@@ -136,16 +153,26 @@
             document.getElementById('mainImg').src = photo.src;
             document.getElementById('pTitle').textContent = detectedRestaurant;
             document.getElementById('pTime').textContent = `${photo.date} ${photo.time || ''}`;
-            document.getElementById('pCoords').textContent = `緯度：${photo.lat.toFixed(4)} 經度：${photo.lng.toFixed(4)}`;
-            document.getElementById('pFileName').textContent = `檔案名稱：${photo.name || '未知'}`;
-            document.getElementById('pTags').textContent = detectedTags;
+            document.getElementById('pCoords').textContent = `${photo.lat.toFixed(6)}, ${photo.lng.toFixed(6)}`;
+            document.getElementById('pFileName').textContent = photo.name || '未知檔案';
             document.getElementById('pAddress').textContent = detectedRestaurant;
+
+            // 標籤渲染為小按鈕
+            const tagsContainer = document.getElementById('pTags');
+            tagsContainer.innerHTML = '';
+            detectedTags.forEach(tag => {
+                const btn = document.createElement('div');
+                btn.className = 'tag-btn';
+                btn.textContent = tag;
+                tagsContainer.appendChild(btn);
+            });
+
             document.getElementById('pDesc').value = photo.description || '';
 
             // 寫回餐廳屬性
             photo.restaurant = detectedRestaurant;
 
-            // 自動建立餐廳相簿（若不存在）
+            // 自動建立餐廳相簿
             if (detectedRestaurant !== "未知地點") {
                 let custom = JSON.parse(localStorage.getItem('custom_albums')) || [];
                 if (!custom.includes(detectedRestaurant)) {
@@ -179,7 +206,7 @@
             let allPhotos = JSON.parse(localStorage.getItem('all_photos')) || [];
             const index = allPhotos.findIndex(p => p.id === photo.id);
             if (index !== -1) allPhotos[index] = photo;
-            else allPhotos.push(photo); // 防止遺失
+            else allPhotos.push(photo);
 
             localStorage.setItem('all_photos', JSON.stringify(allPhotos));
             history.back();
