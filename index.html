@@ -140,56 +140,45 @@
         }
         .my-location-btn i { font-size: 20px; color: #FF9800; }
 
-        .leaflet-control-zoom {
-            margin: 0 !important;
-            border: none !important;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.15) !important;
+        /* 拍照確認介面 */
+        .capture-overlay {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: black;
+            display: none;
+            flex-direction: column;
+            z-index: 100;
         }
-        .leaflet-control-zoom-in, .leaflet-control-zoom-out {
-            background-color: white !important;
-            color: #FF9800 !important;
-            border: none !important;
-            width: 44px !important;
-            height: 44px !important;
-            line-height: 44px !important;
-            font-size: 20px !important;
-            font-weight: bold !important;
+        .capture-preview {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
         }
-        .leaflet-control-zoom-in { border-top-left-radius: 10px !important; border-top-right-radius: 10px !important; border-bottom: 1px solid #f0f0f0 !important; }
-        .leaflet-control-zoom-out { border-bottom-left-radius: 10px !important; border-bottom-right-radius: 10px !important; }
+        .capture-preview img {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+        }
+        .capture-actions {
+            display: flex;
+            justify-content: space-between;
+            padding: 20px;
+            padding-bottom: calc(20px + env(safe-area-inset-bottom));
+        }
+        .capture-btn {
+            background: rgba(255,255,255,0.9);
+            color: #333;
+            padding: 12px 30px;
+            border-radius: 30px;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .retake-btn { background: rgba(255,255,255,0.9); }
+        .use-btn { background: #FFB352; color: white; }
 
-        @keyframes floatIcon {
-            0%, 80%, 100% { margin-top: 0; }
-            90% { margin-top: -10px; }
-        }
-        .floating-icon {
-            animation: floatIcon 6s ease-in-out infinite;
-        }
-
-        .marker-cluster-small, .marker-cluster-small div,
-        .marker-cluster-medium, .marker-cluster-medium div,
-        .marker-cluster-large, .marker-cluster-large div {
-            background-color: rgba(255, 152, 0, 0.6) !important;
-            color: white !important;
-        }
-
-        .photo-marker-icon {
-            background: white;
-            border: 3px solid #FF9800;
-            border-radius: 50%;
-            width: 40px !important;
-            height: 40px !important;
-            text-align: center;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
-        }
-        .photo-marker-icon img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            border-radius: 50%;
-        }
-
-        /* 拍照後左下角縮圖預覽（iPhone 風格） */
+        /* 左下角縮圖預覽 */
         .thumbnail-preview {
             position: absolute;
             bottom: calc(80px + env(safe-area-inset-bottom));
@@ -246,8 +235,19 @@
             <a href="#" onclick="checkLoginStatus()" class="nav-item"><i class="fa-solid fa-user"></i></a>
         </nav>
 
+        <!-- 拍照確認介面 -->
+        <div class="capture-overlay" id="captureOverlay">
+            <div class="capture-preview">
+                <img id="captureImg" src="">
+            </div>
+            <div class="capture-actions">
+                <div class="capture-btn retake-btn" id="retakeBtn">重新拍攝</div>
+                <div class="capture-btn use-btn" id="usePhotoBtn">使用照片</div>
+            </div>
+        </div>
+
         <!-- 左下角縮圖預覽 -->
-        <div class="thumbnail-preview" id="thumbnailPreview" onclick="goToPhotoInfo()">
+        <div class="thumbnail-preview" id="thumbnailPreview">
             <img id="thumbnailImg" src="">
         </div>
     </div>
@@ -378,26 +378,20 @@
             window.location.href = (localStorage.getItem('isLoggedIn') === 'true') ? 'profile.html' : 'personal.html';
         }
 
+        let pendingPhotoData = null;
+
         // 拍照處理
         document.getElementById('input_camera').addEventListener('change', async function(e) {
             const file = e.target.files[0];
-            if (!file) {
-                this.value = '';
-                return;
-            }
+            if (!file) return;
 
             if (!window.currentCapturePos) {
                 try {
                     const pos = await new Promise((resolve, reject) => {
-                        navigator.geolocation.getCurrentPosition(resolve, reject, {
-                            enableHighAccuracy: true,
-                            timeout: 15000,
-                            maximumAge: 0
-                        });
+                        navigator.geolocation.getCurrentPosition(resolve, reject, { enableHighAccuracy: true, timeout: 15000 });
                     });
                     window.currentCapturePos = { lat: pos.coords.latitude, lng: pos.coords.longitude };
                 } catch (err) {
-                    alert("無法取得位置，將使用預設位置");
                     window.currentCapturePos = { lat: 22.7333, lng: 120.2847 };
                 }
             }
@@ -406,22 +400,18 @@
 
             if (file.type === "image/heic" || file.type === "image/heif" || /\.(heic|heif)$/i.test(file.name)) {
                 try {
-                    const converted = await heic2any({
-                        blob: file,
-                        toType: "image/jpeg",
-                        quality: 0.94
-                    });
+                    const converted = await heic2any({ blob: file, toType: "image/jpeg", quality: 0.94 });
                     blob = Array.isArray(converted) ? converted[0] : converted;
                     blob.name = file.name.replace(/\.(heic|heif)$/i, '.jpg');
                 } catch (err) {
-                    console.error("HEIC 轉換失敗，使用原檔", err);
+                    console.error("HEIC 轉換失敗", err);
                     blob = file;
                 }
             }
 
             const reader = new FileReader();
             reader.onload = function(event) {
-                const photoData = {
+                pendingPhotoData = {
                     id: Date.now(),
                     src: event.target.result,
                     name: blob.name || file.name,
@@ -431,42 +421,50 @@
                     lng: window.currentCapturePos.lng
                 };
 
-                // 一定存入正式資料庫
-                let allPhotos = JSON.parse(localStorage.getItem('all_photos')) || [];
-                allPhotos.push(photoData);
-                localStorage.setItem('all_photos', JSON.stringify(allPhotos));
+                // 顯示確認介面
+                document.getElementById('captureImg').src = event.target.result;
+                document.getElementById('captureOverlay').style.display = 'flex';
 
-                // 存入暫存供 photo_info 使用
-                localStorage.setItem('temp_photo_data', JSON.stringify(photoData));
-
-                // 顯示左下角縮圖預覽
+                // 顯示左下角縮圖
                 document.getElementById('thumbnailImg').src = event.target.result;
                 document.getElementById('thumbnailPreview').classList.add('show');
-
-                // 3秒後自動隱藏縮圖
-                setTimeout(() => {
-                    document.getElementById('thumbnailPreview').classList.remove('show');
-                }, 3000);
-
-                // 更新地圖標記
-                loadPhotoMarkers();
             };
-
-            reader.onerror = function() {
-                alert("讀取照片失敗，請重試");
-            };
-
             reader.readAsDataURL(blob);
 
             this.value = '';
         });
 
-        // 點擊縮圖直接進入 photo_info
-        function goToPhotoInfo() {
+        // 重新拍攝
+        document.getElementById('retakeBtn').onclick = () => {
+            document.getElementById('captureOverlay').style.display = 'none';
+            pendingPhotoData = null;
+        };
+
+        // 使用照片
+        document.getElementById('usePhotoBtn').onclick = () => {
+            if (!pendingPhotoData) return;
+
+            // 存入正式資料庫
+            let allPhotos = JSON.parse(localStorage.getItem('all_photos')) || [];
+            allPhotos.push(pendingPhotoData);
+            localStorage.setItem('all_photos', JSON.stringify(allPhotos));
+
+            // 存入暫存供 photo_info 使用
+            localStorage.setItem('temp_photo_data', JSON.stringify(pendingPhotoData));
+
+            // 更新地圖標記
+            loadPhotoMarkers();
+
+            // 跳轉到 photo_info
+            window.location.href = 'photo_info.html';
+        };
+
+        // 點擊縮圖進入 photo_info
+        document.getElementById('thumbnailPreview').onclick = () => {
             if (localStorage.getItem('temp_photo_data')) {
                 window.location.href = 'photo_info.html';
             }
-        }
+        };
 
         window.addEventListener('load', function() {
             initialLocate();
