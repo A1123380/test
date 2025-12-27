@@ -184,7 +184,7 @@
         <nav class="bottom-nav">
             <a href="index.html" class="nav-item active"><i class="fa-solid fa-house"></i></a>
             <a href="article-post.html" class="nav-item"><i class="fa-solid fa-book"></i></a>
-            <a href="#" class="nav-item" onclick="triggerCamera(event)"><i class="fa-solid fa-camera"></i></a>
+            <a href="#" class="nav-item" onclick="triggerCamera()"><i class="fa-solid fa-camera"></i></a>
             <a href="photo_album.html" class="nav-item"><i class="fa-solid fa-image"></i></a>
             <a href="#" onclick="checkLoginStatus()" class="nav-item"><i class="fa-solid fa-user"></i></a>
         </nav>
@@ -272,41 +272,43 @@
             window.location.href = (localStorage.getItem('isLoggedIn') === 'true') ? 'profile.html' : 'personal.html';
         }
 
-        function triggerCamera(event) {
-            event.preventDefault();
+        // 修正：移除 preventDefault，並延後觸發 click
+        function triggerCamera() {
             if (!navigator.geolocation) {
-                alert("瀏覽器不支援定位，無法拍照分類。");
+                alert("您的瀏覽器不支援定位功能，無法開啟相機。");
                 return;
             }
 
-            navigator.geolocation.getCurrentPosition((pos) => {
-                window.currentCapturePos = {
-                    lat: pos.coords.latitude,
-                    lng: pos.coords.longitude
-                };
-                document.getElementById('input_camera').click();
-            }, (err) => {
-                alert("拍照前必須開啟定位功能，請確認權限設定。");
-            }, { enableHighAccuracy: true });
+            navigator.geolocation.getCurrentPosition(
+                (pos) => {
+                    window.currentCapturePos = {
+                        lat: pos.coords.latitude,
+                        lng: pos.coords.longitude
+                    };
+                    // 關鍵：延後到下一輪事件循環，讓瀏覽器認為是使用者觸發
+                    setTimeout(() => {
+                        const input = document.getElementById('input_camera');
+                        input.click();
+                    }, 0);
+                },
+                (err) => {
+                    alert("無法取得定位，請開啟定位權限後再試。");
+                },
+                { enableHighAccuracy: true, timeout: 10000 }
+            );
         }
 
-        // 關鍵：儲存並跳轉的獨立函式
         function saveAndNavigate(photoData) {
-            // 寫入臨時資料
             localStorage.setItem('temp_photo_data', JSON.stringify(photoData));
 
-            // 加入永久相簿
             let allPhotos = JSON.parse(localStorage.getItem('all_photos') || '[]');
             allPhotos.push(photoData);
             localStorage.setItem('all_photos', JSON.stringify(allPhotos));
 
-            // 更新地圖標記
             updatePhotoMarker();
 
-            // 重置 input 以便下次拍照
             document.getElementById('input_camera').value = '';
 
-            // 確保跳轉（多重保險）
             requestAnimationFrame(() => {
                 setTimeout(() => {
                     window.location.href = 'photo_info.html';
@@ -314,7 +316,6 @@
             });
         }
 
-        // 拍照處理
         document.getElementById('input_camera').addEventListener('change', function(e) {
             const file = e.target.files[0];
             if (!file || !window.currentCapturePos) return;
@@ -351,7 +352,6 @@
                         lng: window.currentCapturePos.lng
                     };
 
-                    // 立即執行儲存並跳轉
                     saveAndNavigate(photoData);
                 };
                 img.src = event.target.result;
