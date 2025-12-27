@@ -159,7 +159,6 @@
             color: white !important;
         }
 
-        /* 自訂照片 marker 圖示 */
         .photo-marker-icon {
             background: white;
             border: 3px solid #FF9800;
@@ -201,12 +200,11 @@
         <nav class="bottom-nav">
             <a href="index.html" class="nav-item active"><i class="fa-solid fa-house"></i></a>
             <a href="article-post.html" class="nav-item"><i class="fa-solid fa-book"></i></a>
-            <a href="#" class="nav-item" onclick="triggerCamera(event)"><i class="fa-solid fa-camera"></i></a>
+            <a href="#" class="nav-item" id="cameraBtn"><i class="fa-solid fa-camera"></i></a>
             <a href="photo_album.html" class="nav-item"><i class="fa-solid fa-image"></i></a>
             <a href="#" onclick="checkLoginStatus()" class="nav-item"><i class="fa-solid fa-user"></i></a>
         </nav>
         
-        <!-- 隱藏的相機輸入 -->
         <input type="file" id="input_camera" accept="image/*" capture="environment" style="display: none;">
     </div>
 
@@ -214,7 +212,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/leaflet.markercluster.js"></script>
     <script>
         const map = L.map('mapid', {
-            center: [22.7333, 120.2847], // 預設高雄大學
+            center: [22.7333, 120.2847],
             zoom: 17,
             zoomControl: false 
         });
@@ -225,7 +223,24 @@
 
         L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png').addTo(map);
 
-        // 餐廳 marker cluster
+        // 使用者位置標記變數
+        let userMarker, userCircle;
+
+        // 恢復原本的位置標記繪製
+        map.on('locationfound', function(e) {
+            const radius = e.accuracy / 2;
+            if (userMarker) { map.removeLayer(userMarker); map.removeLayer(userCircle); }
+            userCircle = L.circle(e.latlng, radius, { color: '#FF9800', fillOpacity: 0.1 }).addTo(map);
+            userMarker = L.circleMarker(e.latlng, {
+                radius: 10, fillColor: "#FF9800", color: "#fff", weight: 2, opacity: 1, fillOpacity: 0.9
+            }).addTo(map).bindPopup("您目前的位置").openPopup();
+        });
+
+        map.on('locationerror', function() {
+            alert("無法取得位置，請檢查權限設定");
+        });
+
+        // 餐廳標記
         const restaurantIcon = L.icon({
             iconUrl: 'assets/icon/coordinates.png', 
             iconSize: [38, 38], 
@@ -239,7 +254,6 @@
             spiderfyOnMaxZoom: true
         });
 
-        // 餐廳座標：完全保留您辛苦修正後的精確數據
         const locations = [
             { name: "沐沐MUMU 茶飲", pos: [22.70350854455539, 120.30130446507042], info: "高雄市楠梓區宏毅一路6號" },
             { name: "Bon appétit 葩那貝蒂", pos: [22.736657810967653, 120.32909822442647], info: "高雄市楠梓區土庫一路198號" },
@@ -256,10 +270,16 @@
             const marker = L.marker(loc.pos, { icon: restaurantIcon })
                             .bindPopup(`<b>${loc.name}</b><br>${loc.info}`);
             restaurantClusters.addLayer(marker);
+
+            setTimeout(() => {
+                const iconImg = marker.getElement();
+                if (iconImg) iconImg.style.animationDelay = `-${Math.random() * 10}s`;
+            }, 100);
         });
+
         map.addLayer(restaurantClusters);
 
-        // 照片 marker cluster
+        // 照片標記群聚
         const photoClusters = L.markerClusterGroup({
             showCoverageOnHover: false,
             spiderfyOnMaxZoom: true,
@@ -267,7 +287,6 @@
         });
         map.addLayer(photoClusters);
 
-        // 自訂照片圖示
         function createPhotoIcon(src) {
             return L.divIcon({
                 html: `<div class="photo-marker-icon"><img src="${src}"></div>`,
@@ -278,12 +297,10 @@
             });
         }
 
-        // 載入並顯示已有的照片 marker
         function loadPhotoMarkers() {
             photoClusters.clearLayers();
             const allPhotos = JSON.parse(localStorage.getItem('all_photos')) || [];
             
-            // 按位置群組
             const positionMap = {};
             allPhotos.forEach(photo => {
                 const key = `${photo.lat.toFixed(5)},${photo.lng.toFixed(5)}`;
@@ -293,14 +310,13 @@
 
             Object.keys(positionMap).forEach(key => {
                 const photos = positionMap[key];
-                photos.sort((a,b) => b.id - a.id); // 由新到舊
+                photos.sort((a,b) => b.id - a.id);
                 const latest = photos[0];
 
                 const marker = L.marker([latest.lat, latest.lng], {
                     icon: createPhotoIcon(latest.src)
                 });
 
-                // popup 顯示最近 5 張
                 let popupHtml = `<div style="text-align:center;">`;
                 photos.slice(0,5).forEach((p, i) => {
                     const offset = i * 8;
@@ -313,33 +329,20 @@
             });
         }
 
-        // 初始定位到使用者位置
-        function locateUserAndLoad() {
-            if (navigator.geolocation) {
-                navigator.geolocation.getCurrentPosition(
-                    pos => {
-                        const latlng = [pos.coords.latitude, pos.coords.longitude];
-                        map.setView(latlng, 17);
-                        loadPhotoMarkers();
-                    },
-                    () => {
-                        map.setView([22.7333, 120.2847], 17);
-                        loadPhotoMarkers();
-                    },
-                    { enableHighAccuracy: true, timeout: 10000 }
-                );
-            } else {
-                loadPhotoMarkers();
-            }
+        // 初始定位 + 載入照片標記
+        function initialLocate() {
+            map.locate({ setView: true, maxZoom: 17, enableHighAccuracy: true });
         }
 
         function locateUser() {
             map.locate({ setView: true, maxZoom: 17, enableHighAccuracy: true });
         }
 
-        // 拍照流程（加強穩定性）
-        function triggerCamera(event) {
-            event.preventDefault();
+        // 加強相機觸發（解決 iOS 無法開啟問題）
+        document.getElementById('cameraBtn').addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+
             if (!navigator.geolocation) {
                 alert("瀏覽器不支援定位，無法拍照分類。");
                 return;
@@ -351,16 +354,19 @@
                         lat: pos.coords.latitude,
                         lng: pos.coords.longitude
                     };
-                    document.getElementById('input_camera').click();
+                    // 強制延遲觸發，確保瀏覽器接受
+                    setTimeout(() => {
+                        document.getElementById('input_camera').click();
+                    }, 100);
                 },
                 err => {
-                    alert("拍照前必須開啟定位功能，請確認權限設定。");
+                    alert("拍照前必須開啟定位功能，請確認權限設定。\n錯誤代碼: " + err.code);
                 },
-                { enableHighAccuracy: true, timeout: 15000 }
+                { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
             );
-        }
+        });
 
-        // 拍照完成後處理
+        // 拍照後處理
         document.getElementById('input_camera').addEventListener('change', function(e) {
             const file = e.target.files[0];
             if (file && window.currentCapturePos) {
@@ -387,11 +393,15 @@
             window.location.href = (localStorage.getItem('isLoggedIn') === 'true') ? 'profile.html' : 'personal.html';
         }
 
-        // 頁面載入完成後執行
-        window.addEventListener('load', locateUserAndLoad);
+        // 頁面載入完成後執行初始定位與載入照片
+        window.addEventListener('load', function() {
+            initialLocate();
+            loadPhotoMarkers();
+        });
 
-        // 從 photo_info 回來時若有 highlight，重新載入 marker
+        // 從其他頁面返回時重新載入照片標記
         window.addEventListener('focus', loadPhotoMarkers);
+        window.addEventListener('pageshow', loadPhotoMarkers);
     </script>
 </body>
 </html>
