@@ -105,13 +105,12 @@
             border-radius: 18px;
         }
         
-        /* 相機按鈕：透明 input 覆蓋圖示 */
         #cameraWrapper {
             position: relative;
         }
         #input_camera {
             position: absolute;
-            top: -10px; left: -10px; right: -10px; bottom: -10px;
+            top: -15px; left: -15px; right: -15px; bottom: -15px;
             opacity: 0;
             cursor: pointer;
             z-index: 10;
@@ -216,10 +215,9 @@
             <a href="index.html" class="nav-item active"><i class="fa-solid fa-house"></i></a>
             <a href="article-post.html" class="nav-item"><i class="fa-solid fa-book"></i></a>
             
-            <!-- 相機按鈕：用 label 包裝，input 透明覆蓋 -->
             <label id="cameraWrapper" class="nav-item">
                 <i class="fa-solid fa-camera"></i>
-                <input type="file" id="input_camera" name="camera" accept="image/*" capture="environment">
+                <input type="file" id="input_camera" accept="image/*" capture="environment">
             </label>
             
             <a href="photo_album.html" class="nav-item"><i class="fa-solid fa-image"></i></a>
@@ -242,7 +240,6 @@
 
         L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png').addTo(map);
 
-        // 使用者位置標記變數
         let userMarker, userCircle;
 
         map.on('locationfound', function(e) {
@@ -252,13 +249,15 @@
             userMarker = L.circleMarker(e.latlng, {
                 radius: 10, fillColor: "#FF9800", color: "#fff", weight: 2, opacity: 1, fillOpacity: 0.9
             }).addTo(map).bindPopup("您目前的位置").openPopup();
+
+            // 儲存當前位置，供拍照使用
+            window.currentCapturePos = { lat: e.latlng.lat, lng: e.latlng.lng };
         });
 
         map.on('locationerror', function() {
             alert("無法取得位置，請檢查權限設定");
         });
 
-        // 餐廳標記
         const restaurantIcon = L.icon({
             iconUrl: 'assets/icon/coordinates.png', 
             iconSize: [38, 38], 
@@ -297,7 +296,6 @@
 
         map.addLayer(restaurantClusters);
 
-        // 照片標記群聚
         const photoClusters = L.markerClusterGroup({
             showCoverageOnHover: false,
             spiderfyOnMaxZoom: true,
@@ -359,27 +357,35 @@
             window.location.href = (localStorage.getItem('isLoggedIn') === 'true') ? 'profile.html' : 'personal.html';
         }
 
-        // 拍照處理 + HEIC 轉換
+        // 關鍵修正：拍照處理
         document.getElementById('input_camera').addEventListener('change', async function(e) {
             const file = e.target.files[0];
-            if (!file) return;
+            if (!file) {
+                this.value = '';
+                return;
+            }
 
-            // 先取得位置（如果尚未取得）
+            // 確保有位置資訊（如果尚未取得，立即請求）
             if (!window.currentCapturePos) {
                 try {
                     const pos = await new Promise((resolve, reject) => {
-                        navigator.geolocation.getCurrentPosition(resolve, reject, { enableHighAccuracy: true, timeout: 15000 });
+                        navigator.geolocation.getCurrentPosition(resolve, reject, {
+                            enableHighAccuracy: true,
+                            timeout: 10000,
+                            maximumAge: 60000
+                        });
                     });
                     window.currentCapturePos = { lat: pos.coords.latitude, lng: pos.coords.longitude };
                 } catch (err) {
-                    alert("無法取得位置，將使用上次位置或預設");
+                    alert("無法取得精確位置，將使用上次位置或預設位置");
+                    window.currentCapturePos = window.currentCapturePos || { lat: 22.7333, lng: 120.2847 };
                 }
             }
 
             let blob = file;
 
             // HEIC 轉換
-            if (file.type === "image/heic" || file.type === "image/heif" || file.name.toLowerCase().endsWith('.heic') || file.name.toLowerCase().endsWith('.heif')) {
+            if (file.type === "image/heic" || file.type === "image/heif" || /\.(heic|heif)$/i.test(file.name)) {
                 try {
                     const converted = await heic2any({
                         blob: file,
@@ -390,7 +396,6 @@
                     blob.name = file.name.replace(/\.(heic|heif)$/i, '.jpg');
                 } catch (err) {
                     console.error("HEIC 轉換失敗", err);
-                    alert("HEIC 轉換失敗，將嘗試使用原檔");
                 }
             }
 
@@ -402,11 +407,12 @@
                     name: blob.name || file.name,
                     date: new Date().toLocaleDateString('zh-TW'),
                     time: new Date().toLocaleTimeString('zh-TW', {hour: '2-digit', minute:'2-digit'}),
-                    lat: window.currentCapturePos ? window.currentCapturePos.lat : 22.7333,
-                    lng: window.currentCapturePos ? window.currentCapturePos.lng : 120.2847
+                    lat: window.currentCapturePos.lat,
+                    lng: window.currentCapturePos.lng
                 };
                 
                 localStorage.setItem('temp_photo_data', JSON.stringify(photoData));
+                // 強制跳轉
                 window.location.href = 'photo_info.html';
             };
             reader.readAsDataURL(blob);
