@@ -140,47 +140,6 @@
         }
         .my-location-btn i { font-size: 20px; color: #FF9800; }
 
-        /* 拍照確認介面 */
-        .capture-overlay {
-            position: absolute;
-            top: 0; left: 0; right: 0; bottom: 0;
-            background: black;
-            display: none;
-            flex-direction: column;
-            z-index: 1000;
-        }
-        .capture-preview {
-            flex: 1;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-        }
-        .capture-preview img {
-            max-width: 100%;
-            max-height: 100%;
-            object-fit: contain;
-        }
-        .capture-actions {
-            display: flex;
-            justify-content: space-between;
-            padding: 30px 40px;
-            padding-bottom: calc(30px + env(safe-area-inset-bottom));
-            background: black;
-        }
-        .capture-btn {
-            background: rgba(255,255,255,0.9);
-            color: #333;
-            padding: 14px 40px;
-            border-radius: 30px;
-            font-size: 18px;
-            font-weight: bold;
-            cursor: pointer;
-            min-width: 120px;
-            text-align: center;
-        }
-        .retake-btn { background: rgba(255,255,255,0.9); }
-        .use-btn { background: #FFB352; color: white; }
-
         .photo-marker-simple {
             background: white;
             border: 3px solid #FF9800;
@@ -226,17 +185,6 @@
             <a href="photo_album.html" class="nav-item"><i class="fa-solid fa-image"></i></a>
             <a href="#" onclick="checkLoginStatus()" class="nav-item"><i class="fa-solid fa-user"></i></a>
         </nav>
-
-        <!-- 拍照確認介面 -->
-        <div class="capture-overlay" id="captureOverlay">
-            <div class="capture-preview">
-                <img id="captureImg" src="">
-            </div>
-            <div class="capture-actions">
-                <div class="capture-btn retake-btn" id="retakeBtn">重新拍攝</div>
-                <div class="capture-btn use-btn" id="usePhotoBtn">使用照片</div>
-            </div>
-        </div>
     </div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
@@ -363,9 +311,10 @@
             window.location.href = (localStorage.getItem('isLoggedIn') === 'true') ? 'profile.html' : 'personal.html';
         }
 
-        let pendingPhotoData = null;
+        let pendingPhotoBlob = null;
+        let pendingFileName = null;
 
-        // 拍照處理
+        // 拍照處理 - 使用原生介面
         document.getElementById('input_camera').addEventListener('change', async function(e) {
             const file = e.target.files[0];
             if (!file) return;
@@ -381,8 +330,9 @@
                 }
             }
 
+            pendingFileName = file.name;
+
             let blob = file;
-            let fileName = file.name;
 
             if (file.type === "image/heic" || file.type === "image/heif" || /\.(heic|heif)$/i.test(file.name)) {
                 try {
@@ -393,49 +343,47 @@
                 }
             }
 
-            const reader = new FileReader();
-            reader.onload = function(event) {
-                pendingPhotoData = {
-                    id: Date.now(),
-                    src: event.target.result,
-                    name: fileName,
-                    date: new Date().toLocaleDateString('zh-TW'),
-                    time: new Date().toLocaleTimeString('zh-TW', {hour: '2-digit', minute:'2-digit'}),
-                    lat: window.currentCapturePos.lat,
-                    lng: window.currentCapturePos.lng
-                };
+            pendingPhotoBlob = blob;
 
-                document.getElementById('captureImg').src = event.target.result;
-                document.getElementById('captureOverlay').style.display = 'flex';
-            };
-            reader.readAsDataURL(blob);
-
+            // 清空 input 以便下次拍照
             this.value = '';
         });
 
-        document.getElementById('retakeBtn').onclick = () => {
-            document.getElementById('captureOverlay').style.display = 'none';
-            pendingPhotoData = null;
-        };
+        // 當頁面從背景回到前景（用戶點「使用照片」後返回）
+        document.addEventListener('visibilitychange', function() {
+            if (document.visibilityState === 'visible' && pendingPhotoBlob) {
+                const reader = new FileReader();
+                reader.onload = function(event) {
+                    const photoData = {
+                        id: Date.now(),
+                        src: event.target.result,
+                        name: pendingFileName,
+                        date: new Date().toLocaleDateString('zh-TW'),
+                        time: new Date().toLocaleTimeString('zh-TW', {hour: '2-digit', minute:'2-digit'}),
+                        lat: window.currentCapturePos.lat,
+                        lng: window.currentCapturePos.lng
+                    };
 
-        document.getElementById('usePhotoBtn').onclick = () => {
-            if (!pendingPhotoData) return;
+                    // 存入正式資料庫
+                    let allPhotos = JSON.parse(localStorage.getItem('all_photos')) || [];
+                    allPhotos.push(photoData);
+                    localStorage.setItem('all_photos', JSON.stringify(allPhotos));
 
-            // 存入正式資料庫
-            let allPhotos = JSON.parse(localStorage.getItem('all_photos')) || [];
-            allPhotos.push(pendingPhotoData);
-            localStorage.setItem('all_photos', JSON.stringify(allPhotos));
+                    // 存入暫存
+                    localStorage.setItem('temp_photo_data', JSON.stringify(photoData));
 
-            // 存入暫存
-            localStorage.setItem('temp_photo_data', JSON.stringify(pendingPhotoData));
+                    // 更新地圖
+                    loadPhotoMarkers();
 
-            // 更新地圖
-            loadPhotoMarkers();
+                    // 跳轉
+                    location.replace('photo_info.html');
+                };
+                reader.readAsDataURL(pendingPhotoBlob);
 
-            // 關閉並跳轉
-            document.getElementById('captureOverlay').style.display = 'none';
-            location.replace('photo_info.html');
-        };
+                pendingPhotoBlob = null;
+                pendingFileName = null;
+            }
+        });
 
         window.addEventListener('load', function() {
             initialLocate();
