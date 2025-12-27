@@ -18,6 +18,9 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/MarkerCluster.css" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/MarkerCluster.Default.css" />
     
+    <!-- HEIC 轉換庫 -->
+    <script src="https://cdn.jsdelivr.net/npm/heic2any@0.0.4/dist/heic2any.min.js"></script>
+    
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body, html { 
@@ -100,6 +103,18 @@
             height: 4px;
             background: #FF9800;
             border-radius: 18px;
+        }
+        
+        /* 相機按鈕：透明 input 覆蓋圖示 */
+        #cameraWrapper {
+            position: relative;
+        }
+        #input_camera {
+            position: absolute;
+            top: -10px; left: -10px; right: -10px; bottom: -10px;
+            opacity: 0;
+            cursor: pointer;
+            z-index: 10;
         }
         
         .map-controls-wrapper {
@@ -200,13 +215,16 @@
         <nav class="bottom-nav">
             <a href="index.html" class="nav-item active"><i class="fa-solid fa-house"></i></a>
             <a href="article-post.html" class="nav-item"><i class="fa-solid fa-book"></i></a>
-            <div class="nav-item" id="cameraBtn"><i class="fa-solid fa-camera"></i></div>
+            
+            <!-- 相機按鈕：用 label 包裝，input 透明覆蓋 -->
+            <label id="cameraWrapper" class="nav-item">
+                <i class="fa-solid fa-camera"></i>
+                <input type="file" id="input_camera" name="camera" accept="image/*" capture="environment">
+            </label>
+            
             <a href="photo_album.html" class="nav-item"><i class="fa-solid fa-image"></i></a>
             <a href="#" onclick="checkLoginStatus()" class="nav-item"><i class="fa-solid fa-user"></i></a>
         </nav>
-        
-        <!-- 隱藏的相機輸入 -->
-        <input type="file" id="input_camera" accept="image/*" capture="environment" style="display: none;">
     </div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
@@ -224,7 +242,7 @@
 
         L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png').addTo(map);
 
-        // 使用者位置標記
+        // 使用者位置標記變數
         let userMarker, userCircle;
 
         map.on('locationfound', function(e) {
@@ -329,7 +347,6 @@
             });
         }
 
-        // 初始定位
         function initialLocate() {
             map.locate({ setView: true, maxZoom: 17, enableHighAccuracy: true });
         }
@@ -338,83 +355,72 @@
             map.locate({ setView: true, maxZoom: 17, enableHighAccuracy: true });
         }
 
-        // 相機按鈕點擊事件（最穩定寫法）
-        document.getElementById('cameraBtn').addEventListener('click', function(e) {
-            e.preventDefault();
-            e.stopPropagation();
+        function checkLoginStatus() {
+            window.location.href = (localStorage.getItem('isLoggedIn') === 'true') ? 'profile.html' : 'personal.html';
+        }
 
-            if (!navigator.geolocation) {
-                alert("您的瀏覽器不支援定位功能");
-                return;
+        // 拍照處理 + HEIC 轉換
+        document.getElementById('input_camera').addEventListener('change', async function(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            // 先取得位置（如果尚未取得）
+            if (!window.currentCapturePos) {
+                try {
+                    const pos = await new Promise((resolve, reject) => {
+                        navigator.geolocation.getCurrentPosition(resolve, reject, { enableHighAccuracy: true, timeout: 15000 });
+                    });
+                    window.currentCapturePos = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+                } catch (err) {
+                    alert("無法取得位置，將使用上次位置或預設");
+                }
             }
 
-            // 先取得精確位置
-            navigator.geolocation.getCurrentPosition(
-                function(position) {
-                    window.currentCapturePos = {
-                        lat: position.coords.latitude,
-                        lng: position.coords.longitude
-                    };
+            let blob = file;
 
-                    const input = document.getElementById('input_camera');
-                    
-                    // 多次嘗試觸發（解決 iOS Safari 問題）
-                    input.click();
-                    setTimeout(() => input.click(), 200);
-                    setTimeout(() => input.click(), 500);
-                },
-                function(error) {
-                    let message = "無法取得位置：";
-                    switch(error.code) {
-                        case error.PERMISSION_DENIED: message += "權限被拒絕"; break;
-                        case error.POSITION_UNAVAILABLE: message += "位置資訊不可用"; break;
-                        case error.TIMEOUT: message += "請求超時"; break;
-                        default: message += "未知錯誤"; break;
-                    }
-                    alert(message);
-                },
-                { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
-            );
-        });
-
-        // 拍照完成後處理
-        document.getElementById('input_camera').addEventListener('change', function(e) {
-            const file = e.target.files[0];
-            if (!file || !window.currentCapturePos) return;
+            // HEIC 轉換
+            if (file.type === "image/heic" || file.type === "image/heif" || file.name.toLowerCase().endsWith('.heic') || file.name.toLowerCase().endsWith('.heif')) {
+                try {
+                    const converted = await heic2any({
+                        blob: file,
+                        toType: "image/jpeg",
+                        quality: 0.94
+                    });
+                    blob = Array.isArray(converted) ? converted[0] : converted;
+                    blob.name = file.name.replace(/\.(heic|heif)$/i, '.jpg');
+                } catch (err) {
+                    console.error("HEIC 轉換失敗", err);
+                    alert("HEIC 轉換失敗，將嘗試使用原檔");
+                }
+            }
 
             const reader = new FileReader();
             reader.onload = function(event) {
                 const photoData = {
                     id: Date.now(),
                     src: event.target.result,
-                    name: file.name || 'photo_' + Date.now(),
+                    name: blob.name || file.name,
                     date: new Date().toLocaleDateString('zh-TW'),
                     time: new Date().toLocaleTimeString('zh-TW', {hour: '2-digit', minute:'2-digit'}),
-                    lat: window.currentCapturePos.lat,
-                    lng: window.currentCapturePos.lng
+                    lat: window.currentCapturePos ? window.currentCapturePos.lat : 22.7333,
+                    lng: window.currentCapturePos ? window.currentCapturePos.lng : 120.2847
                 };
                 
-                // 存入暫存，跳轉到 photo_info.html 編輯
                 localStorage.setItem('temp_photo_data', JSON.stringify(photoData));
                 window.location.href = 'photo_info.html';
             };
-            reader.readAsDataURL(file);
+            reader.readAsDataURL(blob);
 
-            // 重置 input 以便下次可再次觸發 change
+            // 重置 input
             this.value = '';
         });
 
-        function checkLoginStatus() {
-            window.location.href = (localStorage.getItem('isLoggedIn') === 'true') ? 'profile.html' : 'personal.html';
-        }
-
-        // 頁面載入時執行
+        // 頁面載入
         window.addEventListener('load', function() {
             initialLocate();
             loadPhotoMarkers();
         });
 
-        // 從其他頁面返回時刷新照片標記
         window.addEventListener('focus', loadPhotoMarkers);
         window.addEventListener('pageshow', loadPhotoMarkers);
     </script>
