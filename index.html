@@ -178,30 +178,20 @@
         .retake-btn { background: rgba(255,255,255,0.9); }
         .use-btn { background: #FFB352; color: white; }
 
-        /* 左下角縮圖預覽 */
-        .thumbnail-preview {
-            position: absolute;
-            bottom: calc(80px + env(safe-area-inset-bottom));
-            left: 20px;
-            width: 70px;
-            height: 70px;
-            border-radius: 12px;
-            overflow: hidden;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-            z-index: 40;
-            cursor: pointer;
-            opacity: 0;
-            transform: translateY(20px);
-            transition: all 0.4s ease;
-        }
-        .thumbnail-preview.show {
-            opacity: 1;
-            transform: translateY(0);
-        }
-        .thumbnail-preview img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
+        /* 照片標記 ICON（簡單圓形） */
+        .photo-marker-simple {
+            background: white;
+            border: 3px solid #FF9800;
+            border-radius: 50%;
+            width: 36px !important;
+            height: 36px !important;
+            text-align: center;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #FF9800;
+            font-size: 18px;
         }
     </style>
 </head>
@@ -244,11 +234,6 @@
                 <div class="capture-btn retake-btn" id="retakeBtn">重新拍攝</div>
                 <div class="capture-btn use-btn" id="usePhotoBtn">使用照片</div>
             </div>
-        </div>
-
-        <!-- 左下角縮圖預覽 -->
-        <div class="thumbnail-preview" id="thumbnailPreview">
-            <img id="thumbnailImg" src="">
         </div>
     </div>
 
@@ -324,15 +309,14 @@
         });
         map.addLayer(photoClusters);
 
-        function createPhotoIcon(src) {
-            return L.divIcon({
-                html: `<div class="photo-marker-icon"><img src="${src}"></div>`,
-                iconSize: [40, 40],
-                iconAnchor: [20, 40],
-                popupAnchor: [0, -40],
-                className: ''
-            });
-        }
+        // 簡單照片 ICON
+        const simplePhotoIcon = L.divIcon({
+            html: `<div class="photo-marker-simple"><i class="fa-solid fa-camera"></i></div>`,
+            iconSize: [36, 36],
+            iconAnchor: [18, 36],
+            popupAnchor: [0, -36],
+            className: ''
+        });
 
         function loadPhotoMarkers() {
             photoClusters.clearLayers();
@@ -351,7 +335,7 @@
                 const latest = photos[0];
 
                 const marker = L.marker([latest.lat, latest.lng], {
-                    icon: createPhotoIcon(latest.src)
+                    icon: simplePhotoIcon
                 });
 
                 let popupHtml = `<div style="text-align:center;padding:10px;">`;
@@ -397,15 +381,15 @@
             }
 
             let blob = file;
+            let fileName = file.name; // 保留原檔名（.HEIC）
 
             if (file.type === "image/heic" || file.type === "image/heif" || /\.(heic|heif)$/i.test(file.name)) {
                 try {
                     const converted = await heic2any({ blob: file, toType: "image/jpeg", quality: 0.94 });
                     blob = Array.isArray(converted) ? converted[0] : converted;
-                    blob.name = file.name.replace(/\.(heic|heif)$/i, '.jpg');
+                    // 檔名保持 .HEIC
                 } catch (err) {
-                    console.error("HEIC 轉換失敗", err);
-                    blob = file;
+                    console.error("HEIC 轉換失敗，使用原檔", err);
                 }
             }
 
@@ -414,33 +398,26 @@
                 pendingPhotoData = {
                     id: Date.now(),
                     src: event.target.result,
-                    name: blob.name || file.name,
+                    name: fileName, // 保留原檔名
                     date: new Date().toLocaleDateString('zh-TW'),
                     time: new Date().toLocaleTimeString('zh-TW', {hour: '2-digit', minute:'2-digit'}),
                     lat: window.currentCapturePos.lat,
                     lng: window.currentCapturePos.lng
                 };
 
-                // 顯示確認介面
                 document.getElementById('captureImg').src = event.target.result;
                 document.getElementById('captureOverlay').style.display = 'flex';
-
-                // 顯示左下角縮圖
-                document.getElementById('thumbnailImg').src = event.target.result;
-                document.getElementById('thumbnailPreview').classList.add('show');
             };
             reader.readAsDataURL(blob);
 
             this.value = '';
         });
 
-        // 重新拍攝
         document.getElementById('retakeBtn').onclick = () => {
             document.getElementById('captureOverlay').style.display = 'none';
             pendingPhotoData = null;
         };
 
-        // 使用照片
         document.getElementById('usePhotoBtn').onclick = () => {
             if (!pendingPhotoData) return;
 
@@ -455,15 +432,9 @@
             // 更新地圖標記
             loadPhotoMarkers();
 
-            // 跳轉到 photo_info
+            // 關閉確認介面並跳轉
+            document.getElementById('captureOverlay').style.display = 'none';
             window.location.href = 'photo_info.html';
-        };
-
-        // 點擊縮圖進入 photo_info
-        document.getElementById('thumbnailPreview').onclick = () => {
-            if (localStorage.getItem('temp_photo_data')) {
-                window.location.href = 'photo_info.html';
-            }
         };
 
         window.addEventListener('load', function() {
