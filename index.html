@@ -188,10 +188,6 @@
             object-fit: cover;
             border-radius: 50%;
         }
-
-        @media (min-width: 768px) {
-            .search-bar { left: 50%; transform: translateX(-50%); }
-        }
     </style>
 </head>
 <body>
@@ -248,9 +244,8 @@
             userCircle = L.circle(e.latlng, radius, { color: '#FF9800', fillOpacity: 0.1 }).addTo(map);
             userMarker = L.circleMarker(e.latlng, {
                 radius: 10, fillColor: "#FF9800", color: "#fff", weight: 2, opacity: 1, fillOpacity: 0.9
-            }).addTo(map).bindPopup("您目前的位置").openPopup();
+            }).addTo(map).bindPopup("您目前的位置");
 
-            // 儲存當前位置，供拍照使用
             window.currentCapturePos = { lat: e.latlng.lat, lng: e.latlng.lng };
         });
 
@@ -287,15 +282,11 @@
             const marker = L.marker(loc.pos, { icon: restaurantIcon })
                             .bindPopup(`<b>${loc.name}</b><br>${loc.info}`);
             restaurantClusters.addLayer(marker);
-
-            setTimeout(() => {
-                const iconImg = marker.getElement();
-                if (iconImg) iconImg.style.animationDelay = `-${Math.random() * 10}s`;
-            }, 100);
         });
 
         map.addLayer(restaurantClusters);
 
+        // 照片群聚 marker
         const photoClusters = L.markerClusterGroup({
             showCoverageOnHover: false,
             spiderfyOnMaxZoom: true,
@@ -319,28 +310,28 @@
             
             const positionMap = {};
             allPhotos.forEach(photo => {
-                const key = `${photo.lat.toFixed(5)},${photo.lng.toFixed(5)}`;
+                const key = `${parseFloat(photo.lat).toFixed(5)},${parseFloat(photo.lng).toFixed(5)}`;
                 if (!positionMap[key]) positionMap[key] = [];
                 positionMap[key].push(photo);
             });
 
             Object.keys(positionMap).forEach(key => {
                 const photos = positionMap[key];
-                photos.sort((a,b) => b.id - a.id);
+                photos.sort((a, b) => b.id - a.id); // 新到舊
                 const latest = photos[0];
 
                 const marker = L.marker([latest.lat, latest.lng], {
                     icon: createPhotoIcon(latest.src)
                 });
 
-                let popupHtml = `<div style="text-align:center;">`;
-                photos.slice(0,5).forEach((p, i) => {
+                let popupHtml = `<div style="text-align:center;padding:10px;">`;
+                photos.slice(0, 5).forEach((p, i) => {
                     const offset = i * 8;
-                    popupHtml += `<img src="${p.src}" style="width:80px;height:80px;object-fit:cover;border-radius:8px;border:2px solid white;margin:4px;box-shadow:0 2px 6px rgba(0,0,0,0.3);position:relative;z-index:${10-i};left:${offset}px;top:${offset}px;">`;
+                    popupHtml += `<img src="${p.src}" style="width:80px;height:80px;object-fit:cover;border-radius:8px;border:3px solid white;margin:4px;box-shadow:0 3px 8px rgba(0,0,0,0.4);position:relative;z-index:${10-i};left:${offset}px;top:${offset}px;">`;
                 });
-                popupHtml += `<br><small>${photos.length > 5 ? '...' : ''} 共 ${photos.length} 張</small></div>`;
+                popupHtml += `<br><small style="color:#666;">共 ${photos.length} 張照片</small></div>`;
 
-                marker.bindPopup(popupHtml);
+                marker.bindPopup(popupHtml, { maxWidth: 400 });
                 photoClusters.addLayer(marker);
             });
         }
@@ -357,41 +348,28 @@
             window.location.href = (localStorage.getItem('isLoggedIn') === 'true') ? 'profile.html' : 'personal.html';
         }
 
-        // 關鍵修正：拍照處理
+        // 拍照處理
         document.getElementById('input_camera').addEventListener('change', async function(e) {
             const file = e.target.files[0];
-            if (!file) {
-                this.value = '';
-                return;
-            }
+            if (!file) return;
 
-            // 確保有位置資訊（如果尚未取得，立即請求）
+            // 確保有位置
             if (!window.currentCapturePos) {
                 try {
                     const pos = await new Promise((resolve, reject) => {
-                        navigator.geolocation.getCurrentPosition(resolve, reject, {
-                            enableHighAccuracy: true,
-                            timeout: 10000,
-                            maximumAge: 60000
-                        });
+                        navigator.geolocation.getCurrentPosition(resolve, reject, { enableHighAccuracy: true, timeout: 10000 });
                     });
                     window.currentCapturePos = { lat: pos.coords.latitude, lng: pos.coords.longitude };
                 } catch (err) {
-                    alert("無法取得精確位置，將使用上次位置或預設位置");
-                    window.currentCapturePos = window.currentCapturePos || { lat: 22.7333, lng: 120.2847 };
+                    window.currentCapturePos = { lat: 22.7333, lng: 120.2847 };
                 }
             }
 
             let blob = file;
 
-            // HEIC 轉換
             if (file.type === "image/heic" || file.type === "image/heif" || /\.(heic|heif)$/i.test(file.name)) {
                 try {
-                    const converted = await heic2any({
-                        blob: file,
-                        toType: "image/jpeg",
-                        quality: 0.94
-                    });
+                    const converted = await heic2any({ blob: file, toType: "image/jpeg", quality: 0.94 });
                     blob = Array.isArray(converted) ? converted[0] : converted;
                     blob.name = file.name.replace(/\.(heic|heif)$/i, '.jpg');
                 } catch (err) {
@@ -410,18 +388,22 @@
                     lat: window.currentCapturePos.lat,
                     lng: window.currentCapturePos.lng
                 };
-                
+
+                // 一定存入正式資料庫
+                let allPhotos = JSON.parse(localStorage.getItem('all_photos')) || [];
+                allPhotos.push(photoData);
+                localStorage.setItem('all_photos', JSON.stringify(allPhotos));
+
+                // 暫存供 photo_info 使用
                 localStorage.setItem('temp_photo_data', JSON.stringify(photoData));
-                // 強制跳轉
+
                 window.location.href = 'photo_info.html';
             };
             reader.readAsDataURL(blob);
 
-            // 重置 input
             this.value = '';
         });
 
-        // 頁面載入
         window.addEventListener('load', function() {
             initialLocate();
             loadPhotoMarkers();
