@@ -15,7 +15,6 @@
             overflow-y: auto; 
         }
 
-        /* 頂部大圖區 */
         .photo-header {
             width: 100%; height: 45vh; position: relative; background: #000;
         }
@@ -26,7 +25,6 @@
             cursor: pointer; z-index: 10;
         }
 
-        /* 資訊內容區 */
         .info-container { padding: 25px 20px; }
         .title-row { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; }
         .photo-title { font-size: 28px; font-weight: bold; color: #333; flex: 1; }
@@ -39,7 +37,6 @@
         .detail-item { font-size: 15px; color: #444; margin-bottom: 5px; line-height: 1.5; }
         .tags-text { color: #FF9800; font-weight: bold; margin-top: 5px; }
         
-        /* 描述輸入區 */
         .description-box {
             margin-top: 20px; border-top: 1px solid #ffeccc; padding-top: 15px;
         }
@@ -49,121 +46,146 @@
             font-size: 16px; color: #555; line-height: 1.6; outline: none; resize: none;
         }
 
-        /* 底部地圖檢視區 */
         .map-section { margin-top: 25px; cursor: pointer; }
         .mini-map-container {
-            width: 100%; height: 150px; border-radius: 18px; overflow: hidden;
-            border: 2px solid #FFB352; box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            height: 200px; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.1);
         }
-        .address-bar {
-            background-color: #FFB352; color: white; padding: 10px;
-            text-align: center; border-bottom-left-radius: 18px; border-bottom-right-radius: 18px;
-            font-size: 14px; font-weight: bold; margin-top: -15px; position: relative; z-index: 5;
+        #miniMap { height: 100%; }
+
+        .bottom-bar {
+            position: fixed; bottom: 0; left: 0; right: 0;
+            padding: 15px; padding-bottom: calc(env(safe-area-inset-bottom) + 10px);
+            background: #FFF9EB; text-align: center;
+            box-shadow: 0 -2px 10px rgba(0,0,0,0.05);
+        }
+        .save-btn {
+            background: #FFB352; color: white; padding: 14px 40px;
+            border: none; border-radius: 30px; font-size: 18px; font-weight: bold;
+            cursor: pointer; box-shadow: 0 4px 10px rgba(255,179,82,0.3);
         }
     </style>
 </head>
 <body>
-
     <div class="photo-header">
-        <div class="back-btn" onclick="history.back()"><i class="fa-solid fa-xmark"></i></div>
+        <div class="back-btn" onclick="history.back()"><i class="fa-solid fa-chevron-left"></i></div>
         <img id="mainImg" class="display-img" src="">
     </div>
 
     <div class="info-container">
         <div class="title-row">
-            <h1 class="photo-title" id="pTitle">載入中...</h1>
-            <a href="article-post.html" class="article-btn">撰寫文章</a>
+            <div class="photo-title" id="pTitle">載入中...</div>
         </div>
 
-        <div id="pDetails">
-            <div class="detail-item" id="pTime">拍攝時間 ----</div>
-            <div class="detail-item" id="pCoords">緯度：-- 經度：--</div>
-            <div class="detail-item" id="pFileName">檔案名稱：----</div>
-            <div class="tags-text" id="pTags">#標籤讀取中</div>
-        </div>
+        <div class="detail-item" id="pTime"></div>
+        <div class="detail-item" id="pCoords"></div>
+        <div class="detail-item" id="pFileName"></div>
+        <div class="detail-item">標籤：<span id="pTags">#寵物友善</span></div>
+        <div class="detail-item">地點：<span id="pAddress">未知地點</span></div>
 
         <div class="description-box">
-            <span class="desc-label">描述：</span>
-            <textarea class="desc-input" placeholder="在那熱騰騰的餐桌上，香氣四溢的料理總是最能撩動味蕾..."></textarea>
+            <div class="desc-label">描述</div>
+            <textarea class="desc-input" id="pDesc" placeholder="寫點什麼..."></textarea>
         </div>
 
         <div class="map-section" onclick="returnToMainMap()">
-            <div id="miniMap" class="mini-map-container"></div>
-            <div class="address-bar" id="pAddress">正在偵測拍攝地點...</div>
+            <div class="mini-map-container" id="miniMap"></div>
         </div>
+    </div>
+
+    <div class="bottom-bar">
+        <button class="save-btn" onclick="saveAndBack()">儲存並返回</button>
     </div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
     <script>
-        // 餐廳座標數據 (同 index.html，用於自動分類判定)
+        let photo = null;
+        const isNew = localStorage.getItem('temp_photo_data') !== null;
+
+        // 餐廳資料（請自行補齊你的所有餐廳座標與名稱）
         const restaurants = [
-            { name: "沐沐MUMU 茶飲", pos: [22.7035, 120.3013], tags: "#沐沐, #茶飲, #寵物友善" },
-            { name: "Bon appétit 葩那貝蒂", pos: [22.7366, 120.3290], tags: "#葩那貝蒂, #西餐, #寵物友善" },
-            { name: "究鶴餐館", pos: [22.6592, 120.3067], tags: "#究鶴, #早午餐, #寵物友善" },
-            { name: "鸚鵡螺餐酒館-富國店", pos: [22.6600, 120.3064], tags: "#鸚鵡螺, #餐酒館, #寵物友善" },
-            { name: "ROSA義大利餐廳", pos: [22.6873, 120.3138], tags: "#ROSA, #義式, #寵物友善" }
+            { name: "Luffy Cafe 相簿", pos: [22.7333, 120.2847], tags: "#寵物友善 #狗狗" },
+            { name: "沐沐MUMU 茶飲", pos: [22.70350854455539, 120.30130446507042], tags: "#寵物友善" },
+            { name: "Bon appétit 葩那貝蒂", pos: [22.736657810967653, 120.32909822442647], tags: "#寵物友善" },
+            // ... 其餘餐廳
         ];
 
-        document.addEventListener('DOMContentLoaded', () => {
-            // 優先讀取剛拍攝的暫存資料，若無則讀取相簿點擊查看的資料
-            let photo = JSON.parse(localStorage.getItem('temp_photo_data'));
-            let isNew = !!photo;
+        window.onload = () => {
+            photo = isNew ? JSON.parse(localStorage.getItem('temp_photo_data')) : {};
 
-            if (!photo) {
-                photo = JSON.parse(localStorage.getItem('viewing_photo'));
-            }
-
-            if (!photo) {
-                alert("查無照片資訊");
+            if (!photo || !photo.src) {
+                alert("無法載入照片");
                 history.back();
                 return;
             }
 
-            // 自動判定最近的餐廳 (簡單演算法)
+            // 自動偵測最近餐廳
             let minDistance = Infinity;
             let detectedRestaurant = "未知地點";
             let detectedTags = "#寵物友善";
 
             restaurants.forEach(res => {
-                const dist = Math.sqrt(Math.pow(res.pos[0] - photo.lat, 2) + Math.pow(res.pos[1] - photo.lng, 2));
-                if (dist < 0.005 && dist < minDistance) { // 500公尺內判定
+                const dist = Math.hypot(res.pos[0] - photo.lat, res.pos[1] - photo.lng);
+                if (dist < 0.01 && dist < minDistance) { // 約1km內
                     minDistance = dist;
                     detectedRestaurant = res.name;
                     detectedTags = res.tags;
                 }
             });
 
-            // 更新頁面顯示
+            // 更新畫面
             document.getElementById('mainImg').src = photo.src;
             document.getElementById('pTitle').textContent = detectedRestaurant;
-            document.getElementById('pTime').textContent = `${photo.date} ${photo.time}`;
-            document.getElementById('pCoords').textContent = `緯度：${parseFloat(photo.lat).toFixed(4)} 經度：${parseFloat(photo.lng).toFixed(4)}`;
-            document.getElementById('pFileName').textContent = `檔案名稱：${photo.name || 'IMG_' + photo.id}`;
+            document.getElementById('pTime').textContent = `${photo.date} ${photo.time || ''}`;
+            document.getElementById('pCoords').textContent = `緯度：${photo.lat.toFixed(4)} 經度：${photo.lng.toFixed(4)}`;
+            document.getElementById('pFileName').textContent = `檔案名稱：${photo.name || '未知'}`;
             document.getElementById('pTags').textContent = detectedTags;
             document.getElementById('pAddress').textContent = detectedRestaurant;
+            document.getElementById('pDesc').value = photo.description || '';
 
-            // 寫回餐廳屬性以便相簿分類
+            // 寫回餐廳屬性
             photo.restaurant = detectedRestaurant;
 
-            // 初始化小型地圖
-            const miniMap = L.map('miniMap', { zoomControl: false, attributionControl: false }).setView([photo.lat, photo.lng], 16);
+            // 自動建立餐廳相簿（若不存在）
+            if (detectedRestaurant !== "未知地點") {
+                let custom = JSON.parse(localStorage.getItem('custom_albums')) || [];
+                if (!custom.includes(detectedRestaurant)) {
+                    custom.push(detectedRestaurant);
+                    localStorage.setItem('custom_albums', JSON.stringify(custom));
+                }
+            }
+
+            // 小地圖
+            const miniMap = L.map('miniMap', { zoomControl: false, attributionControl: false })
+                .setView([photo.lat, photo.lng], 16);
             L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png').addTo(miniMap);
             L.marker([photo.lat, photo.lng]).addTo(miniMap);
 
-            // 如果是新拍攝的照片，存入正式相簿資料庫並清除暫存
+            // 若為新照片，存入正式資料庫
             if (isNew) {
                 let allPhotos = JSON.parse(localStorage.getItem('all_photos')) || [];
                 allPhotos.push(photo);
                 localStorage.setItem('all_photos', JSON.stringify(allPhotos));
                 localStorage.removeItem('temp_photo_data');
             }
-            
-            // 存回目前查看的照片資訊
+
             window.currentPhoto = photo;
-        });
+        };
+
+        function saveAndBack() {
+            if (!photo) return;
+
+            photo.description = document.getElementById('pDesc').value.trim();
+
+            let allPhotos = JSON.parse(localStorage.getItem('all_photos')) || [];
+            const index = allPhotos.findIndex(p => p.id === photo.id);
+            if (index !== -1) allPhotos[index] = photo;
+            else allPhotos.push(photo); // 防止遺失
+
+            localStorage.setItem('all_photos', JSON.stringify(allPhotos));
+            history.back();
+        }
 
         function returnToMainMap() {
-            // 點擊地圖時，告知首頁要高亮顯示這張照片
             localStorage.setItem('highlight_photo', JSON.stringify(window.currentPhoto));
             window.location.href = 'index.html';
         }
