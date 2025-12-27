@@ -76,17 +76,64 @@
             display: flex; background: #FF9800;
         }
 
-        /* 刪除鈕（僅自定義相簿） */
-        .delete-overlay {
-            position: absolute; top: 8px; left: 8px; 
-            background: #ff4d4d; color: white; 
-            width: 28px; height: 28px; border-radius: 50%;
-            display: none; justify-content: center; align-items: center; 
-            font-size: 16px; z-index: 10; box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+        /* 無結果畫面 */
+        .no-result {
+            flex: 1; display: none; flex-direction: column; justify-content: center; align-items: center; color: #888;
+            font-size: 18px; text-align: center; padding: 20px;
         }
-        body.edit-mode .delete-overlay { display: flex; }
+        .no-result.show { display: flex; }
 
-        /* 底部操作列 */
+        /* 彈窗樣式 */
+        .modal-overlay {
+            position: fixed; inset: 0; background: rgba(0,0,0,0.5);
+            display: none; justify-content: center; align-items: center;
+            z-index: 1000; backdrop-filter: blur(5px);
+        }
+
+        /* 新增相簿彈窗 */
+        .add-modal-content {
+            background: #FFF0D1; width: 90%; max-width: 380px; border-radius: 24px;
+            padding: 30px; text-align: center;
+        }
+        .add-modal-title { font-size: 20px; font-weight: bold; margin-bottom: 20px; }
+        .add-modal-input {
+            width: 100%; padding: 14px; border-radius: 12px; border: none;
+            background: white; margin-bottom: 15px; font-size: 16px;
+        }
+        .add-modal-preview {
+            width: 120px; height: 120px; object-fit: cover; border-radius: 12px;
+            margin: 15px auto; display: block; background: #eee;
+        }
+        .add-modal-confirm {
+            width: 100%; padding: 14px; background: #FFB352; color: white;
+            border: none; border-radius: 15px; font-size: 18px; font-weight: bold; cursor: pointer;
+        }
+
+        /* 搜尋彈窗 */
+        .search-modal-content {
+            background: #FFF0D1; width: 85%; max-width: 350px; border-radius: 24px;
+            padding: 30px; text-align: center;
+        }
+        .search-modal-title { font-size: 20px; font-weight: bold; margin-bottom: 20px; }
+        .search-modal-input { width: 100%; padding: 14px; border-radius: 12px; border: none; background: white; }
+        .search-modal-confirm {
+            width: 100%; padding: 14px; background: #FFB352; color: white;
+            border: none; border-radius: 15px; font-size: 18px; font-weight: bold; margin-top: 25px;
+        }
+
+        /* 更多選單 */
+        .more-menu {
+            position: absolute; top: 60px; right: 20px; background: white;
+            border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            overflow: hidden; display: none; z-index: 100;
+        }
+        .more-item {
+            padding: 14px 20px; font-size: 16px; cursor: pointer;
+        }
+        .more-item.danger { color: #ff4444; }
+        .more-item:hover { background: #f0f0f0; }
+
+        /* 底部 */
         .bottom-bar {
             position: fixed; bottom: 0; left: 0; right: 0;
             padding: 12px 30px; padding-bottom: calc(env(safe-area-inset-bottom) + 15px);
@@ -99,41 +146,6 @@
             align-items: center; font-size: 22px; cursor: pointer; 
             box-shadow: 0 3px 10px rgba(0,0,0,0.2);
         }
-
-        /* 新增相簿彈窗（依照 add-photo-album.png） */
-        .modal-overlay {
-            position: fixed; inset: 0; background: rgba(0,0,0,0.5);
-            display: none; justify-content: center; align-items: center;
-            z-index: 1000; backdrop-filter: blur(5px);
-        }
-        .add-modal-content {
-            background: #FFF0D1; width: 85%; max-width: 350px; border-radius: 24px;
-            padding: 30px; position: relative; text-align: center;
-        }
-        .add-modal-title { font-size: 20px; font-weight: bold; color: #333; margin-bottom: 20px; }
-        .add-modal-input {
-            width: 100%; padding: 14px; border-radius: 12px; border: none;
-            background: #FFF9EB; margin: 10px 0 25px 0; font-size: 16px;
-        }
-        .add-modal-confirm {
-            width: 100%; padding: 14px; background: #FFB352; color: white;
-            border: none; border-radius: 15px; font-size: 18px; font-weight: bold; cursor: pointer;
-        }
-
-        /* 搜尋彈窗（依照 photo-search.png） */
-        .search-modal-content {
-            background: #FFF0D1; width: 85%; max-width: 350px; border-radius: 24px;
-            padding: 30px; text-align: center;
-        }
-        .search-modal-title { font-size: 20px; font-weight: bold; color: #333; margin-bottom: 20px; }
-        .search-modal-input {
-            width: 100%; padding: 14px; border-radius: 12px; border: none;
-            background: #FFF9EB; margin: 10px 0 25px 0; font-size: 16px;
-        }
-        .search-modal-confirm {
-            width: 100%; padding: 14px; background: #FFB352; color: white;
-            border: none; border-radius: 15px; font-size: 18px; font-weight: bold; cursor: pointer;
-        }
     </style>
 </head>
 <body>
@@ -143,7 +155,8 @@
             <a href="index.html" class="back-btn"><i class="fa-solid fa-chevron-left"></i></a>
             <div class="action-group">
                 <div class="circle-btn" id="addBtn"><i class="fa-solid fa-plus"></i></div>
-                <div class="circle-btn" id="editBtn"><i class="fa-solid fa-ellipsis"></i></div>
+                <div class="circle-btn" id="selectBtn"><i class="fa-solid fa-check-to-slot"></i></div>
+                <div class="circle-btn" id="moreBtn"><i class="fa-solid fa-ellipsis"></i></div>
             </div>
         </div>
 
@@ -160,8 +173,13 @@
             </div>
         </div>
 
+        <div class="no-result" id="noResult">
+            <div>沒有結果</div>
+            <div style="font-size:14px;margin-top:8px;">沒有「[搜尋關鍵字]」的結果，請嘗試新的搜尋項目</div>
+        </div>
+
         <div class="bottom-bar">
-            <div class="bottom-icon-btn" id="sortBtn"><i class="fa-solid fa-arrow-up-wide-short"></i></div>
+            <div class="bottom-icon-btn"><i class="fa-solid fa-arrow-up-wide-short"></i></div>
             <div class="bottom-icon-btn" id="searchBtn"><i class="fa-solid fa-magnifying-glass"></i></div>
         </div>
     </div>
@@ -170,12 +188,15 @@
     <div class="modal-overlay" id="addModal">
         <div class="add-modal-content">
             <div class="add-modal-title">名稱</div>
-            <input type="text" id="newAlbumName" class="add-modal-input" placeholder="">
+            <input type="text" id="newAlbumName" class="add-modal-input" placeholder="輸入相簿名稱">
+            <div style="font-size:14px;color:#666;margin-bottom:10px;">選擇封面圖（可略過）</div>
+            <img id="previewCover" class="add-modal-preview" src="" style="display:none;">
+            <div id="coverPicker" style="margin:20px 0;">從 default 選擇...</div>
             <button class="add-modal-confirm" id="confirmAdd">儲存</button>
         </div>
     </div>
 
-    <!-- 搜尋相簿彈窗 -->
+    <!-- 搜尋彈窗 -->
     <div class="modal-overlay" id="searchModal">
         <div class="search-modal-content">
             <div class="search-modal-title">搜尋相簿</div>
@@ -184,8 +205,16 @@
         </div>
     </div>
 
+    <!-- 更多選單 -->
+    <div class="more-menu" id="moreMenu">
+        <div class="more-item" id="renameAlbum">更改名稱</div>
+        <div class="more-item" id="changeCover">更換封面圖</div>
+        <div class="more-item danger" id="deleteAlbum">刪除相簿</div>
+    </div>
+
     <script>
         let editMode = false;
+        let currentAlbum = null; // 用於更多選單操作的相簿
 
         document.addEventListener('DOMContentLoaded', () => {
             loadAlbums();
@@ -193,77 +222,52 @@
         });
 
         function setupEventListeners() {
-            // 編輯模式（⋯）
-            document.getElementById('editBtn').onclick = () => {
+            // 選取模式
+            document.getElementById('selectBtn').onclick = () => {
                 editMode = !editMode;
                 document.body.classList.toggle('edit-mode', editMode);
                 if (!editMode) clearSelection();
             };
 
             // 新增相簿
-            document.getElementById('addBtn').onclick = () => {
-                document.getElementById('addModal').style.display = 'flex';
-                document.getElementById('newAlbumName').focus();
-            };
-            document.getElementById('confirmAdd').onclick = () => {
-                const name = document.getElementById('newAlbumName').value.trim();
-                if (name && !getAllAlbums().includes(name)) {
-                    saveCustomAlbum(name);
-                    loadAlbums();
-                } else if (name) {
-                    alert('相簿名稱已存在');
-                    return;
-                }
-                document.getElementById('addModal').style.display = 'none';
-                document.getElementById('newAlbumName').value = '';
-            };
-            // 點擊空白關閉
-            document.getElementById('addModal').onclick = (e) => {
-                if (e.target === document.getElementById('addModal')) {
-                    document.getElementById('addModal').style.display = 'none';
-                }
-            };
+            document.getElementById('addBtn').onclick = openAddModal;
 
             // 搜尋
             document.getElementById('searchBtn').onclick = () => {
                 document.getElementById('searchModal').style.display = 'flex';
                 document.getElementById('searchInput').focus();
             };
-            document.getElementById('confirmSearch').onclick = () => {
-                const query = document.getElementById('searchInput').value.trim().toLowerCase();
-                searchAlbums(query);
-                document.getElementById('searchModal').style.display = 'none';
-                document.getElementById('searchInput').value = '';
-            };
+            document.getElementById('confirmSearch').onclick = performSearch;
             document.getElementById('searchModal').onclick = (e) => {
-                if (e.target === document.getElementById('searchModal')) {
-                    document.getElementById('searchModal').style.display = 'none';
-                }
+                if (e.target === document.getElementById('searchModal')) closeModal('searchModal');
             };
 
-            // 排序（暫時保留，圖示循環）
-            document.getElementById('sortBtn').onclick = () => {
-                alert('排序功能開發中（可擴充時間/名稱/數量）');
+            // 更多選單
+            document.getElementById('moreBtn').onclick = (e) => {
+                e.stopPropagation();
+                const menu = document.getElementById('moreMenu');
+                menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
             };
+            document.onclick = () => document.getElementById('moreMenu').style.display = 'none';
+
+            document.getElementById('renameAlbum').onclick = () => promptRename(currentAlbum);
+            document.getElementById('changeCover').onclick = () => promptChangeCover(currentAlbum);
+            document.getElementById('deleteAlbum').onclick = () => confirmDelete(currentAlbum);
         }
 
-        function loadAlbums() {
+        function loadAlbums(filter = '') {
             const container = document.getElementById('albumContainer');
-            const defaultCard = container.querySelector('[data-name="default"]');
+            const noResult = document.getElementById('noResult');
             container.innerHTML = '';
-            container.appendChild(defaultCard.cloneNode(true)); // 重新 clone 以避免事件遺留
 
             const allPhotos = JSON.parse(localStorage.getItem('all_photos')) || [];
-            const customAlbums = JSON.parse(localStorage.getItem('custom_albums')) || [];
+            const customAlbums = JSON.parse(localStorage.getItem('custom_albums')) || [] || [];
 
-            // 更新 default
-            if (allPhotos.length > 0) {
-                const latest = allPhotos[allPhotos.length - 1];
-                document.querySelector('#defaultDate').textContent = `更新時間 ${latest.date}`;
-                document.querySelector('#defaultCount').textContent = `${allPhotos.length} 張相片`;
-            }
+            // default
+            const defaultPhotos = allPhotos.filter(p => !p.customAlbum && !p.restaurant);
+            renderAlbum('default', defaultPhotos, 'default');
 
-            // 餐廳自動分類
+            // 餐廳分類
             const restaurantMap = {};
             allPhotos.forEach(p => {
                 if (p.restaurant) {
@@ -271,75 +275,132 @@
                     restaurantMap[p.restaurant].push(p);
                 }
             });
+            Object.entries(restaurantMap).forEach(([name, photos]) => renderAlbum(name, photos, 'restaurant'));
 
             // 自定義相簿
-            const customMap = {};
             customAlbums.forEach(name => {
-                customMap[name] = allPhotos.filter(p => p.customAlbum === name);
+                const photos = allPhotos.filter(p => p.customAlbum === name);
+                renderAlbum(name, photos, 'custom');
             });
 
-            // 合併所有相簿
-            const albums = [
-                ...Object.entries(restaurantMap).map(([name, photos]) => ({ name, photos, type: 'restaurant' })),
-                ...Object.entries(customMap).map(([name, photos]) => ({ name, photos, type: 'custom' }))
-            ];
+            // 過濾
+            let visibleCount = 0;
+            document.querySelectorAll('.album-card').forEach(card => {
+                const title = card.querySelector('.album-title').textContent.toLowerCase();
+                const hasTag = card.dataset.tags ? card.dataset.tags.toLowerCase().includes(filter) : false;
+                const hasDate = card.querySelector('.album-meta').textContent.includes(filter);
+                const match = title.includes(filter) || hasTag || hasDate || filter === '';
+                card.style.display = match ? 'flex' : 'none';
+                if (match) visibleCount++;
+            });
 
-            // 渲染（包含空的也顯示）
-            albums.forEach(album => {
-                const card = document.createElement('div');
-                card.className = 'album-card';
-                card.dataset.name = album.name;
-                card.dataset.type = album.type;
+            noResult.classList.toggle('show', visibleCount === 0 && filter !== '');
+            if (visibleCount === 0 && filter !== '') {
+                noResult.querySelector('div').textContent = `沒有「${filter}」的結果，請嘗試新的搜尋項目`;
+            }
+        }
 
-                const thumb = album.photos.length > 0 
-                    ? `<img src="${album.photos[album.photos.length-1].src}" class="album-thumb">`
-                    : `<div class="album-thumb default-icon"><i class="fa-solid fa-image"></i></div>`;
+        function renderAlbum(name, photos, type) {
+            const container = document.getElementById('albumContainer');
+            const card = document.createElement('div');
+            card.className = 'album-card';
+            card.dataset.name = name;
+            card.dataset.type = type;
 
-                card.innerHTML = `
-                    <div class="check-overlay"><i class="fa-solid fa-check"></i></div>
-                    ${album.type === 'custom' ? '<div class="delete-overlay"><i class="fa-solid fa-minus"></i></div>' : ''}
-                    ${thumb}
-                    <div class="album-info">
-                        <div class="album-title">${album.name}</div>
-                        <div class="album-meta">更新時間 ${album.photos.length > 0 ? album.photos[album.photos.length-1].date : '----'}</div>
-                        <div class="album-meta">共 ${album.photos.length} 張相片</div>
-                    </div>
-                `;
+            const thumb = photos.length > 0 
+                ? `<img src="${photos[photos.length-1].src}" class="album-thumb">`
+                : `<div class="album-thumb default-icon"><i class="fa-solid fa-image"></i></div>`;
 
-                // 點擊行為
-                card.onclick = (e) => {
-                    if (editMode) {
-                        if (album.type !== 'default') { // default 不參與選取
-                            card.classList.toggle('selected');
-                        }
-                        e.stopPropagation();
-                    } else {
-                        openAlbum(album.name);
-                    }
-                };
+            const tags = [...new Set(photos.flatMap(p => p.tags || []))].join(',');
 
-                // 刪除（僅自定義）
-                if (album.type === 'custom') {
-                    card.querySelector('.delete-overlay').onclick = (e) => {
-                        e.stopPropagation();
-                        if (confirm(`確定刪除相簿「${album.name}」？（照片會回到 default）`)) {
-                            deleteCustomAlbum(album.name);
-                            loadAlbums();
-                        }
-                    };
+            card.innerHTML = `
+                <div class="check-overlay"><i class="fa-solid fa-check"></i></div>
+                ${thumb}
+                <div class="album-info">
+                    <div class="album-title">${name}</div>
+                    <div class="album-meta">更新時間 ${photos.length > 0 ? photos[photos.length-1].date : '----'}</div>
+                    <div class="album-meta">共 ${photos.length} 張相片</div>
+                </div>
+            `;
+            card.dataset.tags = tags;
+
+            card.onclick = (e) => {
+                if (editMode && type !== 'default') {
+                    card.classList.toggle('selected');
+                    e.stopPropagation();
+                } else if (!editMode) {
+                    if (type === 'custom' || type === 'default') currentAlbum = name;
+                    openAlbum(name);
                 }
-
-                container.appendChild(card);
-            });
-
-            // default 點擊事件重新綁定
-            document.querySelector('[data-name="default"]').onclick = () => {
-                if (!editMode) openAlbum('default');
             };
+
+            // 長按顯示更多選單（自定義相簿）
+            if (type === 'custom') {
+                card.addEventListener('contextmenu', (e) => {
+                    e.preventDefault();
+                    currentAlbum = name;
+                    const menu = document.getElementById('moreMenu');
+                    menu.style.display = 'block';
+                });
+            }
+
+            container.appendChild(card);
         }
 
         function openAlbum(name) {
             window.location.href = `photo.html?album=${encodeURIComponent(name)}`;
+        }
+
+        function openAddModal() {
+            document.getElementById('addModal').style.display = 'flex';
+            document.getElementById('newAlbumName').value = '';
+            document.getElementById('previewCover').style.display = 'none';
+            document.getElementById('coverPicker').onclick = chooseCover;
+        }
+
+        function chooseCover() {
+            // 簡易選擇：從 default 照片中挑一張
+            const allPhotos = JSON.parse(localStorage.getItem('all_photos')) || [];
+            const defaultPhotos = allPhotos.filter(p => !p.customAlbum && !p.restaurant);
+            if (defaultPhotos.length === 0) {
+                alert('default 中沒有照片可選');
+                return;
+            }
+            const idx = Math.floor(Math.random() * defaultPhotos.length);
+            const photo = defaultPhotos[idx];
+            document.getElementById('previewCover').src = photo.src;
+            document.getElementById('previewCover').style.display = 'block';
+            window.tempCover = photo.src;
+        }
+
+        document.getElementById('confirmAdd').onclick = () => {
+            const name = document.getElementById('newAlbumName').value.trim();
+            if (!name) return alert('請輸入名稱');
+            if (getAllAlbums().includes(name)) return alert('名稱已存在');
+
+            const custom = JSON.parse(localStorage.getItem('custom_albums')) || [];
+            custom.push(name);
+            localStorage.setItem('custom_albums', JSON.stringify(custom));
+
+            // 可儲存封面（簡易存到 localStorage）
+            if (window.tempCover) {
+                let covers = JSON.parse(localStorage.getItem('album_covers')) || {};
+                covers[name] = window.tempCover;
+                localStorage.setItem('album_covers', JSON.stringify(covers));
+            }
+
+            loadAlbums();
+            closeModal('addModal');
+        };
+
+        function performSearch() {
+            const query = document.getElementById('searchInput').value.trim().toLowerCase();
+            loadAlbums(query);
+            closeModal('searchModal');
+        }
+
+        function closeModal(id) {
+            document.getElementById(id).style.display = 'none';
         }
 
         function clearSelection() {
@@ -353,32 +414,47 @@
             return ['default', ...restaurants, ...custom];
         }
 
-        function saveCustomAlbum(name) {
-            const custom = JSON.parse(localStorage.getItem('custom_albums')) || [];
-            if (!custom.includes(name)) custom.push(name);
-            localStorage.setItem('custom_albums', JSON.stringify(custom));
+        function promptRename(name) {
+            const newName = prompt('新名稱：', name);
+            if (newName && newName !== name && !getAllAlbums().includes(newName)) {
+                // 變更名稱邏輯（更新照片標記）
+                let photos = JSON.parse(localStorage.getItem('all_photos')) || [];
+                photos.forEach(p => {
+                    if (p.customAlbum === name) p.customAlbum = newName;
+                });
+                localStorage.setItem('all_photos', JSON.stringify(photos));
+
+                let custom = JSON.parse(localStorage.getItem('custom_albums')) || [];
+                custom = custom.map(n => n === name ? newName : n);
+                localStorage.setItem('custom_albums', JSON.stringify(custom));
+
+                loadAlbums();
+            }
         }
 
-        function deleteCustomAlbum(name) {
-            let custom = JSON.parse(localStorage.getItem('custom_albums')) || [];
-            custom = custom.filter(n => n !== name);
-            localStorage.setItem('custom_albums', JSON.stringify(custom));
-
-            // 清除照片標記
-            let photos = JSON.parse(localStorage.getItem('all_photos')) || [];
-            photos = photos.map(p => {
-                if (p.customAlbum === name) delete p.customAlbum;
-                return p;
-            });
-            localStorage.setItem('all_photos', JSON.stringify(photos));
+        function promptChangeCover(name) {
+            // 同 chooseCover 邏輯
+            chooseCover();
+            if (window.tempCover) {
+                let covers = JSON.parse(localStorage.getItem('album_covers')) || {};
+                covers[name] = window.tempCover;
+                localStorage.setItem('album_covers', JSON.stringify(covers));
+                loadAlbums();
+            }
         }
 
-        function searchAlbums(query) {
-            const cards = document.querySelectorAll('.album-card');
-            cards.forEach(card => {
-                const title = card.querySelector('.album-title').textContent.toLowerCase();
-                card.style.display = title.includes(query) || query === '' ? 'flex' : 'none';
-            });
+        function confirmDelete(name) {
+            if (confirm(`確定刪除「${name}」？照片將回到 default`)) {
+                let custom = JSON.parse(localStorage.getItem('custom_albums')) || [];
+                custom = custom.filter(n => n !== name);
+                localStorage.setItem('custom_albums', JSON.stringify(custom));
+
+                let photos = JSON.parse(localStorage.getItem('all_photos')) || [];
+                photos.forEach(p => { if (p.customAlbum === name) delete p.customAlbum; });
+                localStorage.setItem('all_photos', JSON.stringify(photos));
+
+                loadAlbums();
+            }
         }
     </script>
 </body>
