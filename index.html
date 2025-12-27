@@ -311,53 +311,55 @@
             window.location.href = (localStorage.getItem('isLoggedIn') === 'true') ? 'profile.html' : 'personal.html';
         }
 
-        let pendingPhotoBlob = null;
-        let pendingFileName = null;
+        let pendingPhotoFile = null;
 
-        // 拍照處理 - 使用原生介面
+        // 拍照處理 - 使用原生確認介面
         document.getElementById('input_camera').addEventListener('change', async function(e) {
             const file = e.target.files[0];
-            if (!file) return;
-
-            if (!window.currentCapturePos) {
-                try {
-                    const pos = await new Promise((resolve, reject) => {
-                        navigator.geolocation.getCurrentPosition(resolve, reject, { enableHighAccuracy: true, timeout: 15000 });
-                    });
-                    window.currentCapturePos = { lat: pos.coords.latitude, lng: pos.coords.longitude };
-                } catch (err) {
-                    window.currentCapturePos = { lat: 22.7333, lng: 120.2847 };
-                }
+            if (!file) {
+                this.value = '';
+                return;
             }
 
-            pendingFileName = file.name;
+            pendingPhotoFile = file;
 
-            let blob = file;
-
-            if (file.type === "image/heic" || file.type === "image/heif" || /\.(heic|heif)$/i.test(file.name)) {
-                try {
-                    const converted = await heic2any({ blob: file, toType: "image/jpeg", quality: 0.94 });
-                    blob = Array.isArray(converted) ? converted[0] : converted;
-                } catch (err) {
-                    console.error("HEIC 轉換失敗，使用原檔", err);
-                }
-            }
-
-            pendingPhotoBlob = blob;
-
-            // 清空 input 以便下次拍照
+            // 清空以便下次
             this.value = '';
         });
 
-        // 當頁面從背景回到前景（用戶點「使用照片」後返回）
-        document.addEventListener('visibilitychange', function() {
-            if (document.visibilityState === 'visible' && pendingPhotoBlob) {
+        // 當用戶點「使用照片」後回到頁面，focus 事件觸發
+        window.addEventListener('focus', async function() {
+            if (pendingPhotoFile) {
+                // 位置處理
+                if (!window.currentCapturePos) {
+                    try {
+                        const pos = await new Promise((resolve, reject) => {
+                            navigator.geolocation.getCurrentPosition(resolve, reject, { enableHighAccuracy: true, timeout: 15000 });
+                        });
+                        window.currentCapturePos = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+                    } catch (err) {
+                        window.currentCapturePos = { lat: 22.7333, lng: 120.2847 };
+                    }
+                }
+
+                let blob = pendingPhotoFile;
+                let fileName = pendingPhotoFile.name;
+
+                if (pendingPhotoFile.type === "image/heic" || pendingPhotoFile.type === "image/heif" || /\.(heic|heif)$/i.test(pendingPhotoFile.name)) {
+                    try {
+                        const converted = await heic2any({ blob: pendingPhotoFile, toType: "image/jpeg", quality: 0.94 });
+                        blob = Array.isArray(converted) ? converted[0] : converted;
+                    } catch (err) {
+                        console.error("HEIC 轉換失敗", err);
+                    }
+                }
+
                 const reader = new FileReader();
                 reader.onload = function(event) {
                     const photoData = {
                         id: Date.now(),
                         src: event.target.result,
-                        name: pendingFileName,
+                        name: fileName,
                         date: new Date().toLocaleDateString('zh-TW'),
                         time: new Date().toLocaleTimeString('zh-TW', {hour: '2-digit', minute:'2-digit'}),
                         lat: window.currentCapturePos.lat,
@@ -378,10 +380,10 @@
                     // 跳轉
                     location.replace('photo_info.html');
                 };
-                reader.readAsDataURL(pendingPhotoBlob);
 
-                pendingPhotoBlob = null;
-                pendingFileName = null;
+                reader.readAsDataURL(blob);
+
+                pendingPhotoFile = null;
             }
         });
 
@@ -390,7 +392,6 @@
             loadPhotoMarkers();
         });
 
-        window.addEventListener('focus', loadPhotoMarkers);
         window.addEventListener('pageshow', loadPhotoMarkers);
     </script>
 </body>
