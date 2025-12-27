@@ -312,28 +312,42 @@
             window.location.href = (localStorage.getItem('isLoggedIn') === 'true') ? 'profile.html' : 'personal.html';
         }
 
-        // 拍照處理 - 使用瀏覽器預設確認介面
+        // 關鍵修正：拍照處理
         document.getElementById('input_camera').addEventListener('change', async function(e) {
             const file = e.target.files[0];
-            if (!file) return;
+            if (!file) {
+                this.value = '';
+                return;
+            }
 
+            // 確保有位置
             if (!window.currentCapturePos) {
                 try {
                     const pos = await new Promise((resolve, reject) => {
-                        navigator.geolocation.getCurrentPosition(resolve, reject, { enableHighAccuracy: true, timeout: 15000 });
+                        navigator.geolocation.getCurrentPosition(resolve, reject, {
+                            enableHighAccuracy: true,
+                            timeout: 15000,
+                            maximumAge: 0
+                        });
                     });
                     window.currentCapturePos = { lat: pos.coords.latitude, lng: pos.coords.longitude };
                 } catch (err) {
+                    alert("無法取得位置，將使用預設位置");
                     window.currentCapturePos = { lat: 22.7333, lng: 120.2847 };
                 }
             }
 
             let blob = file;
-            let fileName = file.name;
+            let fileName = file.name; // 保留原檔名
 
+            // HEIC 轉換（僅轉格式，檔名不變）
             if (file.type === "image/heic" || file.type === "image/heif" || /\.(heic|heif)$/i.test(file.name)) {
                 try {
-                    const converted = await heic2any({ blob: file, toType: "image/jpeg", quality: 0.94 });
+                    const converted = await heic2any({
+                        blob: file,
+                        toType: "image/jpeg",
+                        quality: 0.94
+                    });
                     blob = Array.isArray(converted) ? converted[0] : converted;
                 } catch (err) {
                     console.error("HEIC 轉換失敗，使用原檔", err);
@@ -352,7 +366,7 @@
                     lng: window.currentCapturePos.lng
                 };
 
-                // 存入正式資料庫
+                // 一定存入正式資料庫
                 let allPhotos = JSON.parse(localStorage.getItem('all_photos')) || [];
                 allPhotos.push(photoData);
                 localStorage.setItem('all_photos', JSON.stringify(allPhotos));
@@ -363,7 +377,7 @@
                 // 更新地圖標記
                 loadPhotoMarkers();
 
-                // 跳轉到 photo_info
+                // 強制跳轉（最穩定方式）
                 setTimeout(() => {
                     location.replace('photo_info.html');
                 }, 300);
