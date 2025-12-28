@@ -1,438 +1,243 @@
 <!DOCTYPE html>
-<html lang="zh-TW">
+<html lang="zh-Hant">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Furry Café Map - 主畫面</title>
-    
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="FurryMap">
-    <meta name="mobile-web-app-capable" content="yes">
-
-    <link rel="apple-touch-icon" href="assets/logo/logo-1.png">
-    <link rel="icon" type="image/png" href="assets/logo/logo-1.png">
-
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/MarkerCluster.css" />
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/MarkerCluster.Default.css" />
-    
-    <!-- HEIC 轉換庫 -->
-    <script src="https://cdn.jsdelivr.net/npm/heic2any@0.0.4/dist/heic2any.min.js"></script>
-    
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Luffy Cafe 相簿</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; }
+        * { box-sizing: border-box; }
         body, html { 
-            height: 100%; 
-            width: 100%;
-            font-family: "Microsoft JhengHei", sans-serif; 
-            overflow: hidden; 
-            background: #ffffff; 
-            -webkit-font-smoothing: antialiased; 
+            height: 100%; margin: 0; padding: 0; 
+            background-color: #FDEFD6; 
+            font-family: "Microsoft JhengHei", sans-serif;
+            overflow-x: hidden;
         }
-        
-        .container {
+
+        /* 頂部導覽列：毛玻璃膠囊風格 */
+        .header-overlay {
             position: fixed;
-            top: 0; left: 0; right: 0; bottom: 0;
-            width: 100%; height: 100%; 
-            overflow: hidden;
-        }
-        
-        #mapid {
-            position: absolute;
-            top: 0; left: 0;
-            width: 100%; height: 100%;
-            z-index: 1;
-        }
-        
-        .search-bar {
-            position: absolute;
-            top: 60px;                      
-            left: 30px;                     
-            width: calc(100% - 60px);       
-            max-width: 392px;               
-            height: 50px;                   
-            background: #E9E9EA;
-            border: 1px solid #000000;
-            border-radius: 100px;
-            display: flex;
-            align-items: center;
-            padding: 0 16px;                
-            box-shadow: 0px 4px 4px 0px rgba(0,0,0,0.25);
-            z-index: 20;
-        }
-        .search-bar i { font-size: 22px; color: #888; flex-shrink: 0; }
-        .search-bar input { border: none; background: transparent; margin: 0 8px; flex: 1; font-size: 16px; outline: none; }
-        
-        .bottom-nav {
-            position: absolute;
-            bottom: 0; left: 0; width: 100%;
-            height: calc(65px + env(safe-area-inset-bottom)); 
-            background: white;
-            border-top-left-radius: 24px;
-            border-top-right-radius: 24px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            gap: clamp(20px, 10vw, 56px); 
-            padding: 0 24px;
-            padding-bottom: env(safe-area-inset-bottom);
-            box-shadow: 0 -2px 10px rgba(0,0,0,0.05);
-            z-index: 30;
-        }
-        
-        .nav-item {
-            position: relative;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            color: #8E8E93;
-            text-decoration: none;
-            cursor: pointer;
-        }
-        .nav-item i { font-size: 26px; } 
-        .nav-item.active { color: #FF9800; }
-        .nav-item.active::after {
-            content: '';
-            position: absolute;
-            bottom: -6px;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 20px;
-            height: 4px;
-            background: #FF9800;
-            border-radius: 18px;
-        }
-        
-        #cameraWrapper {
-            position: relative;
-        }
-        #input_camera {
-            position: absolute;
-            top: -15px; left: -15px; right: -15px; bottom: -15px;
-            opacity: 0;
-            cursor: pointer;
-            z-index: 10;
-        }
-        
-        .map-controls-wrapper {
-            position: absolute;
-            right: 12px;
-            bottom: calc(75px + env(safe-area-inset-bottom)); 
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 4px; 
-            z-index: 500;
-        }
-
-        .my-location-btn {
-            width: 44px;
-            height: 44px;
-            background: white;
-            border-radius: 50%;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            cursor: pointer;
-        }
-        .my-location-btn i { font-size: 20px; color: #FF9800; }
-
-        .leaflet-control-zoom {
-            margin: 0 !important;
-            border: none !important;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.15) !important;
-        }
-        .leaflet-control-zoom-in, .leaflet-control-zoom-out {
-            background-color: white !important;
-            color: #FF9800 !important;
-            border: none !important;
-            width: 44px !important;
-            height: 44px !important;
-            line-height: 44px !important;
-            font-size: 20px !important;
-            font-weight: bold !important;
-        }
-        .leaflet-control-zoom-in { border-top-left-radius: 10px !important; border-top-right-radius: 10px !important; border-bottom: 1px solid #f0f0f0 !important; }
-        .leaflet-control-zoom-out { border-bottom-left-radius: 10px !important; border-bottom-right-radius: 10px !important; }
-
-        @keyframes floatIcon {
-            0%, 80%, 100% { margin-top: 0; }
-            90% { margin-top: -10px; }
-        }
-        .floating-icon {
-            animation: floatIcon 6s ease-in-out infinite;
-        }
-
-        .marker-cluster-small, .marker-cluster-small div,
-        .marker-cluster-medium, .marker-cluster-medium div,
-        .marker-cluster-large, .marker-cluster-large div {
-            background-color: rgba(255, 152, 0, 0.6) !important;
-            color: white !important;
-        }
-
-        .photo-marker-icon {
-            background: white;
-            border: 3px solid #FF9800;
-            border-radius: 50%;
-            width: 40px !important;
-            height: 40px !important;
-            text-align: center;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
-        }
-        .photo-marker-icon img {
+            top: 20px;
+            left: 0;
             width: 100%;
-            height: 100%;
-            object-fit: cover;
-            border-radius: 50%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 15px;
+            z-index: 1000;
         }
+        .header-overlay .btn-group { display: flex; gap: 8px; }
+        
+        .glass-btn {
+            background: rgba(0, 0, 0, 0.4);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            color: white;
+            border-radius: 30px;
+            padding: 8px 16px;
+            display: flex;
+            align-items: center;
+            font-size: 15px;
+            border: none;
+            cursor: pointer;
+            text-decoration: none;
+        }
+        .glass-btn i { font-size: 18px; }
+        .glass-btn.pill { padding: 8px 20px; font-weight: bold; }
+        .glass-btn.circle { width: 40px; height: 40px; padding: 0; justify-content: center; }
+        .glass-btn.active { background: rgba(255, 152, 0, 0.8); }
+
+        /* 照片網格與滾動區域 */
+        .content-scroll {
+            height: 100vh;
+            overflow-y: auto;
+            padding-bottom: 150px;
+        }
+        .photo-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 2px;
+        }
+        .photo-item { position: relative; padding-top: 100%; background: #eee; overflow: hidden; cursor: pointer; }
+        .photo-img { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; transition: transform 0.2s; }
+
+        /* 底部相簿資訊 */
+        .album-info-section {
+            padding: 40px 20px;
+            text-align: center;
+        }
+        .album-title { font-size: 32px; font-weight: 800; color: #000; margin-bottom: 8px; }
+        .photo-count-subtitle { font-size: 18px; color: #555; }
+
+        /* 底部功能按鈕 */
+        .bottom-actions {
+            position: fixed;
+            bottom: 30px;
+            left: 0;
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            padding: 0 25px;
+            z-index: 1000;
+            pointer-events: none;
+        }
+        .action-circle {
+            width: 56px;
+            height: 56px;
+            background: rgba(80, 80, 80, 0.8);
+            backdrop-filter: blur(10px);
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 22px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+            pointer-events: auto;
+            cursor: pointer;
+        }
+
+        /* 選取提示圓圈 */
+        .selection-overlay { 
+            position: absolute; 
+            top: 8px; 
+            right: 8px; 
+            width: 24px; 
+            height: 24px; 
+            border-radius: 50%; 
+            border: 2px solid white; 
+            background: rgba(0,0,0,0.2); 
+            display: none; 
+            justify-content: center; 
+            align-items: center; 
+            color: white; 
+            font-size: 12px; 
+            z-index: 5; 
+        }
+        body.select-mode .selection-overlay { display: flex; }
+        .photo-item.selected .selection-overlay { background: #007AFF; border-color: white; }
+        .photo-item.selected .photo-img { transform: scale(0.9); opacity: 0.8; }
+        
+        /* Modal & Toast */
+        .orange-modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.5); display: none; justify-content: center; align-items: center; z-index: 3000; backdrop-filter: blur(5px); }
+        .orange-modal-content { background: #FFF0D1; width: 85%; border-radius: 24px; padding: 30px; text-align: center; }
+        .toast { position: fixed; top: 80px; left: 50%; transform: translateX(-50%); background: white; padding: 12px 24px; border-radius: 30px; z-index: 4000; display: none; box-shadow: 0 4px 12px rgba(0,0,0,0.1); font-weight: bold; }
     </style>
 </head>
-<body>
-    <div class="container">
-        <div id="mapid"></div>
-        
-        <div class="search-bar">
-            <i class="fa-solid fa-magnifying-glass"></i>
-            <input type="text" placeholder="搜尋餐廳">
-            <i class="fa-solid fa-microphone"></i>
+<body id="mainBody">
+
+    <div class="header-overlay">
+        <a href="photo_album.html" class="glass-btn">
+            <i class="fa-solid fa-chevron-left"></i>&nbsp;相簿
+        </a>
+        <div class="btn-group">
+            <button class="glass-btn circle"><i class="fa-solid fa-plus"></i></button>
+            <button class="glass-btn pill" id="selectToggle">選取</button>
+            <button class="glass-btn circle" id="openMoreBtn"><i class="fa-solid fa-ellipsis-h"></i></button>
         </div>
-        
-        <div class="map-controls-wrapper">
-            <div class="my-location-btn" onclick="locateUser()">
-                <i class="fa-solid fa-location-crosshairs"></i>
-            </div>
-            <div id="zoom-container"></div>
-        </div>
-        
-        <nav class="bottom-nav">
-            <a href="index.html" class="nav-item active"><i class="fa-solid fa-house"></i></a>
-            <a href="article-post.html" class="nav-item"><i class="fa-solid fa-book"></i></a>
-            
-            <label id="cameraWrapper" class="nav-item">
-                <i class="fa-solid fa-camera"></i>
-                <input type="file" id="input_camera" accept="image/*" capture="environment">
-            </label>
-            
-            <a href="photo_album.html" class="nav-item"><i class="fa-solid fa-image"></i></a>
-            <a href="#" onclick="checkLoginStatus()" class="nav-item"><i class="fa-solid fa-user"></i></a>
-        </nav>
     </div>
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/leaflet.markercluster.js"></script>
+    <div class="content-scroll">
+        <div class="photo-grid" id="photoGrid"></div>
+
+        <div class="album-info-section">
+            <h1 class="album-title">Luffy Cafe 相簿</h1>
+            <p class="photo-count-subtitle" id="totalCountDisplay">0 張照片</p>
+        </div>
+    </div>
+
+    <div class="bottom-actions">
+        <div class="action-circle" id="openSortBtn"><i class="fa-solid fa-arrow-up-down"></i></div>
+        <div class="action-circle" id="openSearchBtn"><i class="fa-solid fa-magnifying-glass"></i></div>
+    </div>
+
+    <div id="orangeModalOverlay" class="orange-modal-overlay">
+        <div class="orange-modal-content">
+            <h3 style="margin-top:0">搜尋照片</h3>
+            <input type="text" id="inputName" placeholder="搜尋名稱" style="width:100%; margin:10px 0; padding:12px; border-radius:8px; border:1px solid #ddd;">
+            <button onclick="runSearch()" style="width:100%; padding:12px; background:#FFB352; border:none; border-radius:10px; color:white; font-weight:bold;">搜尋</button>
+            <p onclick="closeOrange()" style="margin-top:20px; cursor:pointer;">取消</p>
+        </div>
+    </div>
+
+    <div id="toast" class="toast"><span id="toastMsg"></span></div>
+
     <script>
-        const map = L.map('mapid', {
-            center: [22.7333, 120.2847],
-            zoom: 17,
-            zoomControl: false 
-        });
+        const photoGrid = document.getElementById('photoGrid');
+        const totalCountDisplay = document.getElementById('totalCountDisplay');
+        const selectToggle = document.getElementById('selectToggle');
+        const mainBody = document.getElementById('mainBody');
         
-        L.control.zoom({ position: 'bottomright' }).addTo(map);
-        const zoomCtrl = document.querySelector('.leaflet-control-zoom');
-        document.getElementById('zoom-container').appendChild(zoomCtrl);
+        let isSelectMode = false;
 
-        L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png').addTo(map);
-
-        let userMarker, userCircle;
-
-        map.on('locationfound', function(e) {
-            const radius = e.accuracy / 2;
-            if (userMarker) { map.removeLayer(userMarker); map.removeLayer(userCircle); }
-            userCircle = L.circle(e.latlng, radius, { color: '#FF9800', fillOpacity: 0.1 }).addTo(map);
-            userMarker = L.circleMarker(e.latlng, {
-                radius: 10, fillColor: "#FF9800", color: "#fff", weight: 2, opacity: 1, fillOpacity: 0.9
-            }).addTo(map).bindPopup("您目前的位置");
-
-            window.currentCapturePos = { lat: e.latlng.lat, lng: e.latlng.lng };
-        });
-
-        map.on('locationerror', function() {
-            alert("無法取得位置，請檢查權限設定");
-        });
-
-        const restaurantIcon = L.icon({
-            iconUrl: 'assets/icon/coordinates.png', 
-            iconSize: [38, 38], 
-            iconAnchor: [19, 38], 
-            popupAnchor: [0, -15],
-            className: 'floating-icon' 
-        });
-
-        const restaurantClusters = L.markerClusterGroup({
-            showCoverageOnHover: false,
-            spiderfyOnMaxZoom: true
-        });
-
-        const locations = [
-            { name: "沐沐MUMU 茶飲", pos: [22.70350854455539, 120.30130446507042], info: "高雄市楠梓區宏毅一路6號" },
-            { name: "Bon appétit 葩那貝蒂", pos: [22.736657810967653, 120.32909822442647], info: "高雄市楠梓區土庫一路198號" },
-            { name: "究鶴餐館", pos: [22.659232089345057, 120.30670308024811], info: "高雄市左營區富國路98號" },
-            { name: "鸚鵡螺餐酒館-富國店", pos: [22.660084586531575, 120.30648179558894], info: "高雄市左營區富國路101號" },
-            { name: "ROSA義大利餐廳", pos: [22.687341270147343, 120.31386639374334], info: "高雄市左營區華夏路1422號" },
-            { name: "貓之家俱樂部", pos: [22.66880977978303, 120.29994138209479], info: "高雄市左營區新勝街26號" },
-            { name: "萊Bar音樂餐酒館", pos: [22.67991127626432, 120.31122636675437], info: "高雄市左營區文自路５７１號" },
-            { name: "逅巷咖啡定食", pos: [22.669228579277874, 120.30437362257813], info: "高雄市左營區新上街307巷15號" },
-            { name: "心滿義廚", pos: [22.66626008061487, 120.30757376490757], info: "高雄市立信路28號" }
-        ];
-
-        locations.forEach(loc => {
-            const marker = L.marker(loc.pos, { icon: restaurantIcon })
-                            .bindPopup(`<b>${loc.name}</b><br>${loc.info}`);
-            restaurantClusters.addLayer(marker);
-        });
-
-        map.addLayer(restaurantClusters);
-
-        const photoClusters = L.markerClusterGroup({
-            showCoverageOnHover: false,
-            spiderfyOnMaxZoom: true,
-            maxClusterRadius: 60
-        });
-        map.addLayer(photoClusters);
-
-        function createPhotoIcon(src) {
-            return L.divIcon({
-                html: `<div class="photo-marker-icon"><img src="${src}"></div>`,
-                iconSize: [40, 40],
-                iconAnchor: [20, 40],
-                popupAnchor: [0, -40],
-                className: ''
-            });
-        }
-
-        function loadPhotoMarkers() {
-            photoClusters.clearLayers();
-            const allPhotos = JSON.parse(localStorage.getItem('all_photos')) || [];
+        function loadPhotos() {
+            photoGrid.innerHTML = ''; 
+            const allPhotos = JSON.parse(localStorage.getItem('all_photos') || '[]');
             
-            const positionMap = {};
-            allPhotos.forEach(photo => {
-                const key = `${parseFloat(photo.lat).toFixed(5)},${parseFloat(photo.lng).toFixed(5)}`;
-                if (!positionMap[key]) positionMap[key] = [];
-                positionMap[key].push(photo);
-            });
-
-            Object.keys(positionMap).forEach(key => {
-                const photos = positionMap[key];
-                photos.sort((a, b) => b.id - a.id);
-                const latest = photos[0];
-
-                const marker = L.marker([latest.lat, latest.lng], {
-                    icon: createPhotoIcon(latest.src)
-                });
-
-                let popupHtml = `<div style="text-align:center;padding:10px;">`;
-                photos.slice(0, 5).forEach((p, i) => {
-                    const offset = i * 8;
-                    popupHtml += `<img src="${p.src}" style="width:80px;height:80px;object-fit:cover;border-radius:8px;border:3px solid white;margin:4px;box-shadow:0 3px 8px rgba(0,0,0,0.4);position:relative;z-index:${10-i};left:${offset}px;top:${offset}px;">`;
-                });
-                popupHtml += `<br><small style="color:#666;">共 ${photos.length} 張照片</small></div>`;
-
-                marker.bindPopup(popupHtml, { maxWidth: 400 });
-                photoClusters.addLayer(marker);
-            });
-        }
-
-        function initialLocate() {
-            map.locate({ setView: true, maxZoom: 17, enableHighAccuracy: true });
-        }
-
-        function locateUser() {
-            map.locate({ setView: true, maxZoom: 17, enableHighAccuracy: true });
-        }
-
-        function checkLoginStatus() {
-            window.location.href = (localStorage.getItem('isLoggedIn') === 'true') ? 'profile.html' : 'personal.html';
-        }
-
-        // 關鍵修正：拍照處理
-        document.getElementById('input_camera').addEventListener('change', async function(e) {
-            const file = e.target.files[0];
-            if (!file) {
-                this.value = '';
-                return;
+            // 1. 先載入 40 張範例照片 (放在最上面)
+            for (let i = 0; i < 40; i++) {
+                const exampleUrl = `https://picsum.photos/id/${i+18}/200/200`;
+                addPhotoToGrid(exampleUrl, `ex-${i}`, `範例照片 ${i}`, '範例', false);
             }
 
-            // 確保有位置
-            if (!window.currentCapturePos) {
-                try {
-                    const pos = await new Promise((resolve, reject) => {
-                        navigator.geolocation.getCurrentPosition(resolve, reject, {
-                            enableHighAccuracy: true,
-                            timeout: 15000,
-                            maximumAge: 0
-                        });
-                    });
-                    window.currentCapturePos = { lat: pos.coords.latitude, lng: pos.coords.longitude };
-                } catch (err) {
-                    alert("無法取得位置，將使用預設位置");
-                    window.currentCapturePos = { lat: 22.7333, lng: 120.2847 };
+            // 2. 載入實拍照片 (放在下面，且依 ID 排序，最新的在最底端)
+            allPhotos.sort((a, b) => a.id - b.id);
+            allPhotos.forEach(photo => addPhotoToGrid(photo.src, photo.id, photo.name, photo.tag, true));
+
+            totalCountDisplay.textContent = (allPhotos.length + 40) + ' 張照片';
+        }
+
+        function addPhotoToGrid(src, id, name, tag, isReal) {
+            const div = document.createElement('div');
+            div.className = 'photo-item';
+            div.setAttribute('data-id', id);
+            div.setAttribute('data-name', name || ''); 
+            
+            div.innerHTML = `<img src="${src}" class="photo-img"><div class="selection-overlay"></div>`;
+
+            div.onclick = () => {
+                if (isSelectMode) {
+                    div.classList.toggle('selected');
+                    updateCountDisplay();
+                } else if (isReal) {
+                    // 非選取模式：實拍照片進入詳細頁
+                    const allPhotos = JSON.parse(localStorage.getItem('all_photos') || '[]');
+                    const photo = allPhotos.find(p => p.id == id);
+                    if (photo) {
+                        localStorage.setItem('temp_photo_data', JSON.stringify(photo));
+                        window.location.href = 'photo_info.html';
+                    }
                 }
-            }
-
-            let blob = file;
-
-            // HEIC 轉換
-            if (file.type === "image/heic" || file.type === "image/heif" || /\.(heic|heif)$/i.test(file.name)) {
-                try {
-                    const converted = await heic2any({
-                        blob: file,
-                        toType: "image/jpeg",
-                        quality: 0.94
-                    });
-                    blob = Array.isArray(converted) ? converted[0] : converted;
-                    blob.name = file.name.replace(/\.(heic|heif)$/i, '.jpg');
-                } catch (err) {
-                    console.error("HEIC 轉換失敗，使用原檔", err);
-                    blob = file; // 仍使用原檔
-                }
-            }
-
-            const reader = new FileReader();
-            reader.onload = function(event) {
-                const photoData = {
-                    id: Date.now(),
-                    src: event.target.result,
-                    name: blob.name || file.name,
-                    date: new Date().toLocaleDateString('zh-TW'),
-                    time: new Date().toLocaleTimeString('zh-TW', {hour: '2-digit', minute:'2-digit'}),
-                    lat: window.currentCapturePos.lat,
-                    lng: window.currentCapturePos.lng
-                };
-
-                // 一定存入正式資料庫
-                let allPhotos = JSON.parse(localStorage.getItem('all_photos')) || [];
-                allPhotos.push(photoData);
-                localStorage.setItem('all_photos', JSON.stringify(allPhotos));
-
-                // 存入暫存供 photo_info 使用
-                localStorage.setItem('temp_photo_data', JSON.stringify(photoData));
-
-                // 強制跳轉（一定會執行）
-                setTimeout(() => {
-                    window.location.href = 'photo_info.html';
-                }, 100);
             };
+            photoGrid.appendChild(div);
+        }
 
-            reader.onerror = function() {
-                alert("讀取照片失敗，請重試");
-            };
+        selectToggle.onclick = () => {
+            isSelectMode = !isSelectMode;
+            if (isSelectMode) {
+                mainBody.classList.add('select-mode');
+                selectToggle.textContent = '取消';
+                selectToggle.classList.add('active');
+            } else {
+                mainBody.classList.remove('select-mode');
+                selectToggle.textContent = '選取';
+                selectToggle.classList.remove('active');
+                document.querySelectorAll('.photo-item.selected').forEach(el => el.classList.remove('selected'));
+            }
+        };
 
-            reader.readAsDataURL(blob);
+        function updateCountDisplay() {
+            const count = document.querySelectorAll('.photo-item.selected').length;
+            selectToggle.textContent = count > 0 ? `選取 (${count})` : '選取';
+            let i = 1;
+            document.querySelectorAll('.photo-item.selected .selection-overlay').forEach(el => el.textContent = i++);
+            document.querySelectorAll('.photo-item:not(.selected) .selection-overlay').forEach(el => el.textContent = '');
+        }
 
-            // 重置 input
-            this.value = '';
-        });
+        function closeOrange() { document.getElementById('orangeModalOverlay').style.display = 'none'; }
+        document.getElementById('openSearchBtn').onclick = () => { document.getElementById('orangeModalOverlay').style.display = 'flex'; };
 
-        window.addEventListener('load', function() {
-            initialLocate();
-            loadPhotoMarkers();
-        });
-
-        window.addEventListener('focus', loadPhotoMarkers);
-        window.addEventListener('pageshow', loadPhotoMarkers);
+        loadPhotos();
     </script>
 </body>
 </html>

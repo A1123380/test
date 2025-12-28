@@ -211,6 +211,8 @@
         L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png').addTo(map);
 
         let userMarker, userCircle;
+        let lastKnownLocation = null;  // 記錄最後一次成功定位的位置
+        let hasLocated = false;        // 是否已成功取得過定位
 
         const restaurantIcon = L.icon({
             iconUrl: 'assets/icon/coordinates.png', 
@@ -250,8 +252,15 @@
 
         map.addLayer(clusters);
 
-        function locateUser(setView = true) {
-            map.locate({ setView: setView, maxZoom: 17, enableHighAccuracy: true });
+        // 修正：只詢問一次定位權限
+        function locateUser(forceRequest = false) {
+            if (lastKnownLocation && !forceRequest) {
+                // 已定位過，直接飛到上次位置，不再請求權限
+                map.flyTo(lastKnownLocation, 17);
+                return;
+            }
+
+            map.locate({ setView: false, maxZoom: 17, enableHighAccuracy: true });
         }
 
         map.on('locationfound', function(e) {
@@ -261,6 +270,9 @@
             userMarker = L.circleMarker(e.latlng, {
                 radius: 10, fillColor: "#FF9800", color: "#fff", weight: 2, opacity: 1, fillOpacity: 0.9
             }).addTo(map).bindPopup("您目前的位置");
+
+            lastKnownLocation = e.latlng;
+            hasLocated = true;
             map.flyTo(e.latlng, 17);
         });
 
@@ -269,13 +281,13 @@
             map.setView([22.7333, 120.2847], 17);
         });
 
+        // 頁面載入時只嘗試一次定位
         locateUser(true);
 
         function checkLoginStatus() {
             window.location.href = (localStorage.getItem('isLoggedIn') === 'true') ? 'profile.html' : 'personal.html';
         }
 
-        // 開啟相機（iOS 相容）
         function triggerCamera() {
             if (!navigator.geolocation) {
                 alert("您的瀏覽器不支援定位功能，無法開啟相機。");
@@ -299,7 +311,6 @@
             );
         }
 
-        // 處理圖片（支援 HEIC → JPEG）
         async function processImage(file) {
             let blob = file;
 
@@ -347,7 +358,6 @@
             });
         }
 
-        // 儲存並跳轉
         function saveAndNavigate(dataUrl) {
             const photoData = {
                 id: Date.now(),
@@ -369,13 +379,11 @@
 
             document.getElementById('input_camera').value = '';
 
-            // 確保跳轉成功
             setTimeout(() => {
                 window.location.href = 'photo_info.html';
             }, 200);
         }
 
-        // 檔案選擇後處理
         document.getElementById('input_camera').addEventListener('change', async function(e) {
             const file = e.target.files[0];
             if (!file || !window.currentCapturePos) return;
@@ -427,7 +435,12 @@
                 popupContent += '</div>';
             }
             popupContent += '</div>';
-            photoMarker.bindPopup(popupContent, { maxWidth: 320 });
+
+            // 修正：氣泡框向上偏移，避免蓋到相機圖示
+            photoMarker.bindPopup(popupContent, { 
+                maxWidth: 320,
+                offset: [0, -40]  // 向上移動 40px
+            });
         }
 
         window.openPhoto = function(id) {
