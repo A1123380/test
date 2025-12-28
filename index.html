@@ -21,7 +21,6 @@
     <script src="https://cdn.jsdelivr.net/npm/heic2any@0.0.4/dist/heic2any.min.js"></script>
     
     <style>
-        /* 基礎全域設定 */
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body, html { 
             height: 100%; 
@@ -46,44 +45,29 @@
             z-index: 1;
         }
         
-<<<<<<< HEAD
         /* 搜尋列 */
         .search-bar-container {
             position: absolute;
             top: 60px;                      
             left: 50%;
             transform: translateX(-50%);
-=======
-        /* 搜尋列 - 保持置中 */
-        .search-bar {
-            position: absolute;
-            top: 60px;                      
-            left: 50%;                      
-            transform: translateX(-50%);     
->>>>>>> 5ec20613fa6b024d41ad9a59f91e807c32160afb
             width: calc(100% - 60px);       
             max-width: 392px;
             z-index: 20;
         }
         .search-bar {
             height: 50px;                   
-            background: rgba(233, 233, 234, 0.9);
+            background: #E9E9EA;
             border: 1px solid #000000;
             border-radius: 100px;
             display: flex;
             align-items: center;
             padding: 0 16px;                
             box-shadow: 0px 4px 4px 0px rgba(0,0,0,0.25);
-<<<<<<< HEAD
-=======
-            z-index: 20;
-            backdrop-filter: blur(5px);
->>>>>>> 5ec20613fa6b024d41ad9a59f91e807c32160afb
         }
-        .search-bar i { font-size: 20px; color: #888; flex-shrink: 0; }
+        .search-bar i { font-size: 22px; color: #888; flex-shrink: 0; }
         .search-bar input { border: none; background: transparent; margin: 0 8px; flex: 1; font-size: 16px; outline: none; }
         
-<<<<<<< HEAD
         /* 搜尋結果選單 */
         .search-results {
             margin-top: 8px;
@@ -179,27 +163,21 @@
             font-size: 18px;
         }
 
-=======
-        /* --- 修正後的底部導覽列 --- */
->>>>>>> 5ec20613fa6b024d41ad9a59f91e807c32160afb
         .bottom-nav {
-            position: fixed;
-            bottom: 0; 
-            left: 0; 
-            width: 100%;
-            /* 基礎高度 70px + iPhone 底部安全區 */
-            height: calc(70px + env(safe-area-inset-bottom)); 
-            background: rgba(255, 255, 255, 0.92);
-            backdrop-filter: blur(15px); /* 毛玻璃效果 */
-            -webkit-backdrop-filter: blur(15px);
-            border-top-left-radius: 28px;
-            border-top-right-radius: 28px;
+            position: absolute;
+            bottom: 0; left: 0; width: 100%;
+            height: calc(65px + env(safe-area-inset-bottom)); 
+            background: white;
+            border-top-left-radius: 24px;
+            border-top-right-radius: 24px;
             display: flex;
-            justify-content: space-around; /* 均勻分佈 */
-            align-items: flex-start;
-            padding: 16px 10px env(safe-area-inset-bottom) 10px;
-            box-shadow: 0 -5px 25px rgba(0,0,0,0.08);
-            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+            gap: clamp(20px, 10vw, 56px); 
+            padding: 0 24px;
+            padding-bottom: env(safe-area-inset-bottom);
+            box-shadow: 0 -2px 10px rgba(0,0,0,0.05);
+            z-index: 30;
         }
         
         .nav-item {
@@ -207,33 +185,24 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            justify-content: center;
             color: #8E8E93;
             text-decoration: none;
-            width: 20%; 
-            height: 44px;
-            transition: all 0.2s ease;
+            cursor: pointer;
         }
-        
-        .nav-item i { font-size: 24px; } 
-        
-        .nav-item.active { 
-            color: #FF9800; 
-            transform: translateY(-2px); 
-        }
-        
-        /* 作用中指示點 */
+        .nav-item i { font-size: 26px; } 
+        .nav-item.active { color: #FF9800; }
         .nav-item.active::after {
             content: '';
             position: absolute;
-            bottom: -8px;
-            width: 6px;
-            height: 6px;
+            bottom: -6px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 20px;
+            height: 4px;
             background: #FF9800;
-            border-radius: 50%;
+            border-radius: 18px;
         }
         
-<<<<<<< HEAD
         /* 氣泡框加大與文字調整 */
         .custom-popup .leaflet-popup-content-wrapper { 
             border-radius: 18px; 
@@ -255,74 +224,48 @@
             font-size: 15px;
         }
 
-=======
-        /* 調整地圖控制鈕位置（定位與縮放），確保在 Navbar 之上 */
->>>>>>> 5ec20613fa6b024d41ad9a59f91e807c32160afb
         .map-controls-wrapper {
             position: absolute;
-            right: 16px;
-            bottom: calc(85px + env(safe-area-inset-bottom)); 
+            right: 12px;
+            bottom: calc(75px + env(safe-area-inset-bottom)); 
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 8px; 
+            gap: 4px; 
             z-index: 500;
         }
 
         .my-location-btn {
-            width: 48px;
-            height: 48px;
+            width: 44px;
+            height: 44px;
             background: white;
             border-radius: 50%;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
             display: flex;
             justify-content: center;
             align-items: center;
             cursor: pointer;
         }
-        .my-location-btn i { font-size: 22px; color: #FF9800; }
+        .my-location-btn i { font-size: 20px; color: #FF9800; }
 
-<<<<<<< HEAD
         .leaflet-control-zoom { margin: 0 !important; border: none !important; box-shadow: 0 2px 8px rgba(0,0,0,0.15) !important; }
-=======
-        .leaflet-control-zoom {
-            margin: 0 !important;
-            border: none !important;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15) !important;
-        }
->>>>>>> 5ec20613fa6b024d41ad9a59f91e807c32160afb
         .leaflet-control-zoom-in, .leaflet-control-zoom-out {
             background-color: white !important;
             color: #FF9800 !important;
             border: none !important;
-            width: 48px !important;
-            height: 48px !important;
-            line-height: 48px !important;
-            font-size: 22px !important;
+            width: 44px !important;
+            height: 44px !important;
+            line-height: 44px !important;
+            font-size: 20px !important;
             font-weight: bold !important;
         }
-        .leaflet-control-zoom-in { border-top-left-radius: 12px !important; border-top-right-radius: 12px !important; border-bottom: 1px solid #f4f4f4 !important; }
-        .leaflet-control-zoom-out { border-bottom-left-radius: 12px !important; border-bottom-right-radius: 12px !important; }
+        .leaflet-control-zoom-in { border-top-left-radius: 10px !important; border-top-right-radius: 10px !important; border-bottom: 1px solid #f0f0f0 !important; }
+        .leaflet-control-zoom-out { border-bottom-left-radius: 10px !important; border-bottom-right-radius: 10px !important; }
 
-<<<<<<< HEAD
         @keyframes floatIcon { 0%, 80%, 100% { margin-top: 0; } 90% { margin-top: -10px; } }
         .floating-icon { animation: floatIcon 6s ease-in-out infinite; }
         .marker-cluster-small, .marker-cluster-small div, .marker-cluster-medium, .marker-cluster-medium div, .marker-cluster-large, .marker-cluster-large div {
             background-color: rgba(255, 152, 0, 0.6) !important; color: white !important;
-=======
-        /* 動畫效果 */
-        @keyframes floatIcon {
-            0%, 80%, 100% { margin-top: 0; }
-            90% { margin-top: -10px; }
-        }
-        .floating-icon { animation: floatIcon 6s ease-in-out infinite; }
-
-        .marker-cluster-small, .marker-cluster-small div,
-        .marker-cluster-medium, .marker-cluster-medium div,
-        .marker-cluster-large, .marker-cluster-large div {
-            background-color: rgba(255, 152, 0, 0.6) !important;
-            color: white !important;
->>>>>>> 5ec20613fa6b024d41ad9a59f91e807c32160afb
         }
     </style>
 </head>
@@ -383,10 +326,6 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/leaflet.markercluster.js"></script>
     <script>
-<<<<<<< HEAD
-=======
-        // 1. 地圖初始化
->>>>>>> 5ec20613fa6b024d41ad9a59f91e807c32160afb
         const map = L.map('mapid', {
             center: [22.732775288093578, 120.2884383523927],
             zoom: 17,
@@ -404,7 +343,6 @@
         });
         const clusters = L.markerClusterGroup({ showCoverageOnHover: false, spiderfyOnMaxZoom: true });
 
-        // 餐廳資料
         const locations = [
             { name: "沐沐MUMU 茶飲", pos: [22.703508, 120.301304], info: "高雄市楠梓區宏毅一路6號", price: "$100-200", rating: "4.8" },
             { name: "Bon appétit 葩那貝蒂", pos: [22.736657, 120.329098], info: "高雄市楠梓區土庫一路198號", price: "$300-500", rating: "4.5" },
@@ -432,7 +370,6 @@
         });
         map.addLayer(clusters);
 
-<<<<<<< HEAD
         // --- 面板邏輯 ---
         function openDetailPanel(loc) {
             document.getElementById('panelName').innerText = loc.name;
@@ -468,13 +405,6 @@
                 const exists = locations.some(loc => loc.name.toLowerCase().includes(query));
                 if (!exists && query !== "") { showFailModal(); }
                 searchResults.style.display = 'none';
-=======
-        // 2. 定位功能
-        function locateUser(forceRequest = false) {
-            if (lastKnownLocation && !forceRequest) {
-                map.flyTo(lastKnownLocation, 17);
-                return;
->>>>>>> 5ec20613fa6b024d41ad9a59f91e807c32160afb
             }
         });
 
@@ -508,98 +438,36 @@
             const radius = e.accuracy / 2;
             if (userMarker) { map.removeLayer(userMarker); map.removeLayer(userCircle); }
             userCircle = L.circle(e.latlng, radius, { color: '#FF9800', fillOpacity: 0.1 }).addTo(map);
-<<<<<<< HEAD
             userMarker = L.circleMarker(e.latlng, { radius: 10, fillColor: "#FF9800", color: "#fff", weight: 2, opacity: 1, fillOpacity: 0.9 }).addTo(map).bindPopup("您目前的位置");
             lastKnownLocation = e.latlng; hasLocated = true; map.flyTo(e.latlng, 17);
-=======
-            userMarker = L.circleMarker(e.latlng, {
-                radius: 10, fillColor: "#FF9800", color: "#fff", weight: 2, opacity: 1, fillOpacity: 0.9
-            }).addTo(map).bindPopup("您目前的位置");
-
-            lastKnownLocation = e.latlng;
-            hasLocated = true;
-            map.flyTo(e.latlng, 17);
-        });
-
-        map.on('locationerror', function(e) {
-            console.warn('定位失敗:', e.message);
->>>>>>> 5ec20613fa6b024d41ad9a59f91e807c32160afb
         });
 
         map.on('locationerror', function(e) { map.setView([22.7333, 120.2847], 17); });
         locateUser(true);
 
-<<<<<<< HEAD
         function checkLoginStatus() { window.location.href = (localStorage.getItem('isLoggedIn') === 'true') ? 'profile.html' : 'personal.html'; }
         
         // --- 相機拍照與圖片處理 ---
         function triggerCamera() {
             if (!navigator.geolocation) { alert("您的瀏覽器不支援定位功能。"); return; }
             navigator.geolocation.getCurrentPosition((pos) => { window.currentCapturePos = { lat: pos.coords.latitude, lng: pos.coords.longitude }; }, null, { enableHighAccuracy: true, timeout: 5000 });
-=======
-        function checkLoginStatus() {
-            window.location.href = (localStorage.getItem('isLoggedIn') === 'true') ? 'profile.html' : 'personal.html';
-        }
-
-        // 3. 相機功能
-        function triggerCamera() {
-            if (!navigator.geolocation) {
-                alert("您的瀏覽器不支援定位功能，無法開啟相機。");
-                return;
-            }
-            navigator.geolocation.getCurrentPosition(
-                (pos) => {
-                    window.currentCapturePos = {
-                        lat: pos.coords.latitude,
-                        lng: pos.coords.longitude
-                    };
-                },
-                null, 
-                { enableHighAccuracy: true, timeout: 5000 }
-            );
->>>>>>> 5ec20613fa6b024d41ad9a59f91e807c32160afb
             document.getElementById('input_camera').click();
         }
 
         async function processImage(file) {
             let blob = file;
             if (file.type === "image/heic" || file.type === "image/heif" || file.name.toLowerCase().endsWith('.heic')) {
-<<<<<<< HEAD
                 try { blob = await heic2any({ blob: file, toType: "image/jpeg", quality: 0.8 }); if (Array.isArray(blob)) blob = blob[0]; } catch (e) { return null; }
-=======
-                try {
-                    blob = await heic2any({ blob: file, toType: "image/jpeg", quality: 0.8 });
-                    if (Array.isArray(blob)) blob = blob[0];
-                } catch (e) {
-                    console.error("HEIC 轉換失敗", e);
-                    return null;
-                }
->>>>>>> 5ec20613fa6b024d41ad9a59f91e807c32160afb
             }
             return new Promise((resolve) => {
                 const reader = new FileReader();
                 reader.onload = (event) => {
                     const img = new Image();
                     img.onload = () => {
-<<<<<<< HEAD
                         const canvas = document.createElement('canvas'); const ctx = canvas.getContext('2d');
                         const maxWidth = 1024; let width = img.width, height = img.height;
                         if (width > maxWidth) { height = Math.round((height * maxWidth) / width); width = maxWidth; }
                         canvas.width = width; canvas.height = height; ctx.drawImage(img, 0, 0, width, height);
-=======
-                        const canvas = document.createElement('canvas');
-                        const ctx = canvas.getContext('2d');
-                        const maxWidth = 1024;
-                        let width = img.width;
-                        let height = img.height;
-                        if (width > maxWidth) {
-                            height = Math.round((height * maxWidth) / width);
-                            width = maxWidth;
-                        }
-                        canvas.width = width;
-                        canvas.height = height;
-                        ctx.drawImage(img, 0, 0, width, height);
->>>>>>> 5ec20613fa6b024d41ad9a59f91e807c32160afb
                         resolve(canvas.toDataURL('image/jpeg', 0.7));
                     };
                     img.src = event.target.result;
@@ -609,52 +477,20 @@
         }
 
         function saveAndNavigate(dataUrl) {
-<<<<<<< HEAD
             const finalPos = window.currentCapturePos || { lat: map.getCenter().lat, lng: map.getCenter().lng };
             const photoData = { id: Date.now(), src: dataUrl, name: "photo_" + Date.now() + ".jpg", date: new Date().toLocaleDateString('zh-TW'), time: new Date().toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit' }), lat: finalPos.lat, lng: finalPos.lng };
             localStorage.setItem('temp_photo_data', JSON.stringify(photoData));
             let allPhotos = JSON.parse(localStorage.getItem('all_photos') || '[]'); allPhotos.push(photoData); localStorage.setItem('all_photos', JSON.stringify(allPhotos));
             updatePhotoMarker(); document.getElementById('input_camera').value = '';
-=======
-            const finalPos = window.currentCapturePos || {
-                lat: map.getCenter().lat,
-                lng: map.getCenter().lng
-            };
-            const photoData = {
-                id: Date.now(),
-                src: dataUrl,
-                name: "photo_" + Date.now() + ".jpg",
-                date: new Date().toLocaleDateString('zh-TW'),
-                time: new Date().toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit' }),
-                lat: finalPos.lat,
-                lng: finalPos.lng
-            };
-            localStorage.setItem('temp_photo_data', JSON.stringify(photoData));
-            let allPhotos = JSON.parse(localStorage.getItem('all_photos') || '[]');
-            allPhotos.push(photoData);
-            localStorage.setItem('all_photos', JSON.stringify(allPhotos));
-            updatePhotoMarker();
-            document.getElementById('input_camera').value = '';
->>>>>>> 5ec20613fa6b024d41ad9a59f91e807c32160afb
             setTimeout(() => { window.location.href = 'photo_info.html'; }, 200);
         }
 
         document.getElementById('input_camera').addEventListener('change', async function(e) {
-<<<<<<< HEAD
             const file = e.target.files[0]; if (!file) return;
             const dataUrl = await processImage(file); if (dataUrl) saveAndNavigate(dataUrl);
         });
 
         // --- 相片堆疊地標功能 ---
-=======
-            const file = e.target.files[0];
-            if (!file) return;
-            const dataUrl = await processImage(file);
-            if (dataUrl) saveAndNavigate(dataUrl);
-        });
-
-        // 4. 照片標記功能
->>>>>>> 5ec20613fa6b024d41ad9a59f91e807c32160afb
         const FIXED_PHOTO_LOCATION = [22.732775288093578, 120.2884383523927];
         const photoStackIcon = L.divIcon({
             className: 'photo-stack-marker',
@@ -687,11 +523,6 @@
         };
 
         updatePhotoMarker();
-<<<<<<< HEAD
-=======
-
-        // 5. 頁面生命週期處理
->>>>>>> 5ec20613fa6b024d41ad9a59f91e807c32160afb
         window.addEventListener('focus', updatePhotoMarker);
         if (window.location.search.includes('focus=photo')) {
             history.replaceState({}, '', 'index.html');
