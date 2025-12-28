@@ -34,7 +34,7 @@
             color: #333;
         }
 
-        /* 搜尋列 - 依照圖片樣式 */
+        /* 搜尋列 */
         .search-section {
             padding: 0 20px;
             margin-bottom: 15px;
@@ -91,7 +91,7 @@
 
         /* 文章卡片樣式 */
         .article-card {
-            background: #FFF0D6; /* 圖片中的米黃色卡片 */
+            background: #FFF0D6; 
             border-radius: 20px;
             padding: 15px;
             margin-bottom: 20px;
@@ -99,6 +99,7 @@
             flex-direction: column;
             position: relative;
             box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+            cursor: pointer;
         }
 
         .card-top {
@@ -112,7 +113,7 @@
             height: 100px;
             border-radius: 15px;
             object-fit: cover;
-            background: #ddd;
+            background: #eee;
         }
 
         .card-content {
@@ -152,7 +153,7 @@
         }
 
         .footer-left { display: flex; gap: 10px; }
-        .footer-right { display: flex; align-items: center; gap: 4px; color: #D35400; }
+        .footer-right { display: flex; align-items: center; gap: 4px; color: #FF9800; } /* 統一品牌橘 */
 
         /* 懸浮按鈕 (FAB) */
         .add-post-btn {
@@ -173,7 +174,7 @@
             z-index: 100;
         }
 
-        /* 底部導覽列 (與 index.html 一致) */
+        /* 底部導覽列 */
         .bottom-nav {
             position: fixed;
             bottom: 0; left: 0; width: 100%;
@@ -249,17 +250,16 @@
 </nav>
 
 <script>
-    // 預設店家資料
     const locations = [
-        { name: "沐沐MUMU 茶飲", pos: [22.703508, 120.301304], info: "高雄市楠梓區宏毅一路6號", price: "100-200", date: "2025年12月10日", heart: 156, desc: "這家茶飲店的環境非常放鬆，適合帶毛孩來喝杯茶休息。推薦他們的招牌奶茶！" },
-        { name: "Bon appétit 葩那貝蒂", pos: [22.736657, 120.329098], info: "高雄市楠梓區土庫一路198號", price: "300-500", date: "2025年11月15日", heart: 242, desc: "精緻的法式餐點與寵物友善的環境，店狗非常熱情，是週末聚餐的好去處。" },
-        { name: "究鶴餐館", pos: [22.659232, 120.306703], info: "高雄市左營區富國路98號", price: "200-400", date: "2025年12月01日", heart: 189, desc: "空間寬敞明亮，毛孩可以落地活動。店員對寵物非常友善，餐點表現穩定。" },
-        { name: "鸚鵡螺餐酒館", pos: [22.660084, 120.306481], info: "高雄市左營區富國路101號", price: "600-800", date: "2025年10月20日", heart: 310, desc: "很有氛圍的餐酒館，晚上燈光美氣氛佳，是許多少毛爸媽放鬆聊天的好去處。" },
-        { name: "ROSA義大利餐廳", pos: [22.687341, 120.313866], info: "高雄市左營區華夏路1422號", price: "400-600", date: "2025年12月05日", heart: 125, desc: "道地的義大利麵，戶外區對寵物相當友善。點杯飲料搭配小食，非常愜意。" },
-        { name: "貓之家俱樂部", pos: [22.668809, 120.299941], info: "高雄市左營區新勝街26號", price: "200-300", date: "2025年11月28日", heart: 420, desc: "貓奴必去！店內有多隻可愛店貓，環境乾淨沒有異味，適合與毛孩互動。" },
-        { name: "萊Bar音樂餐酒館", pos: [22.679911, 120.311226], info: "高雄市左營區文自路571號", price: "500-700", date: "2025年12月12日", heart: 98, desc: "現場音樂好聽，寵物入內需在提籠或推車內，適合想聽音樂喝點小酒的家長。" },
-        { name: "逅巷咖啡定食", pos: [22.669228, 120.304374], info: "高雄市左營區新上街307巷15號", price: "250-400", date: "2025年12月18日", heart: 175, desc: "巷弄內的私房美味，定食份量充足，老闆對毛孩非常客氣。" },
-        { name: "心滿義廚", pos: [22.666260, 120.307573], info: "高雄市立信路28號", price: "300-500", date: "2025年12月22日", heart: 132, desc: "溫馨的居家風格，義大利麵與燉飯都很出色。是下班後帶毛孩用餐的好選擇。" }
+        { name: "沐沐MUMU 茶飲", pos: [22.703508, 120.301304], info: "高雄市楠梓區宏毅一路6號", price: "100-200", date: "2025年12月10日", heart: 156, desc: "這家茶飲店的環境非常放鬆，適合帶著毛孩一起來喝杯特調。推薦他們的招牌水果茶與現烤鬆餅！" },
+        { name: "Bon appétit 葩那貝蒂", pos: [22.736657, 120.329098], info: "高雄市楠梓區土庫一路198號", price: "300-500", date: "2025年11月15日", heart: 242, desc: "精緻的法式甜點與輕食餐點，每一盤都像藝術品一般。是週末帶著毛孩優雅聚餐的好地方。" },
+        { name: "究鶴餐館", pos: [22.659232, 120.306703], info: "高雄市左營區富國路98號", price: "200-400", date: "2025年12月01日", heart: 189, desc: "主打豐盛的家常美味定食，食材新鮮且味道紮實。空間寬敞明亮，毛孩可以落地活動，深受毛爸媽推薦。" },
+        { name: "鸚鵡螺餐酒館", pos: [22.660084, 120.306481], info: "高雄市左營區富國路101號", price: "600-800", date: "2025年10月20日", heart: 310, desc: "很有氛圍的西式餐酒，無論是義大利麵或是炸物小點都在水準之上。晚上帶著毛孩來小酌一番也非常合適。" },
+        { name: "ROSA義大利餐廳", pos: [22.687341, 120.313866], info: "高雄市左營區華夏路1422號", price: "400-600", date: "2025年12月05日", heart: 125, desc: "道地的義大利料理，手工窯烤披薩香氣誘人。戶外空間寬敞，用餐時還能感受到微風，非常愜意。" },
+        { name: "貓之家俱樂部", pos: [22.668809, 120.299941], info: "高雄市左營區新勝街26號", price: "200-300", date: "2025年11月28日", heart: 420, desc: "這家的下午茶組合非常精緻，尤其是草莓塔與手沖咖啡。環境安靜且整潔，是與寵物共度靜謐時光的首選。" },
+        { name: "萊Bar音樂餐酒館", pos: [22.679911, 120.311226], info: "高雄市左營區文自路571號", price: "500-700", date: "2025年12月12日", heart: 98, desc: "除了有現場音樂演奏，餐點的調味也極具創意。炸雞翅與調酒是必點組合，狗狗只要在籠內就能一同進店。" },
+        { name: "逅巷咖啡定食", pos: [22.669228, 120.304374], info: "高雄市左營區新上街307巷15號", price: "250-400", date: "2025年12月18日", heart: 175, desc: "藏身巷弄，主打健康的日式定食。份量誠意十足，老闆對毛孩非常友善，會主動提供寵物專用水盆。" },
+        { name: "心滿義廚", pos: [22.666260, 120.307573], info: "高雄市立信路28號", price: "300-500", date: "2025年12月22日", heart: 132, desc: "溫馨的居家裝潢，招牌奶油燉飯香氣四溢。每一盤料理都能感受到主廚的用心，是下班後帶著毛孩用餐的好去處。" }
     ];
 
     const listContainer = document.getElementById('articleList');
@@ -267,14 +267,14 @@
     function renderArticles() {
         listContainer.innerHTML = '';
         locations.forEach((loc, index) => {
-            const city = loc.info.substring(0, 2); // 擷取縣市
+            const city = loc.info.substring(0, 2);
             const card = document.createElement('div');
             card.className = 'article-card';
             card.onclick = () => window.location.href = `article-detail.html?id=${index}`;
             
             card.innerHTML = `
                 <div class="card-top">
-                    <img src="https://picsum.photos/seed/${index + 10}/200" class="shop-img" alt="shop">
+                    <img src="https://loremflickr.com/200/200/food,meal,cafe?random=${index}" class="shop-img" alt="food">
                     <div class="card-content">
                         <div class="shop-name-row">
                             <span class="shop-name">${loc.name}</span>
