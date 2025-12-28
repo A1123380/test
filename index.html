@@ -18,7 +18,6 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/MarkerCluster.css" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/MarkerCluster.Default.css" />
     
-    <!-- HEIC 轉 JPEG 所需庫 -->
     <script src="https://cdn.jsdelivr.net/npm/heic2any@0.0.4/dist/heic2any.min.js"></script>
     
     <style>
@@ -211,8 +210,8 @@
         L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png').addTo(map);
 
         let userMarker, userCircle;
-        let lastKnownLocation = null;  // 記錄最後一次成功定位的位置
-        let hasLocated = false;        // 是否已成功取得過定位
+        let lastKnownLocation = null;  
+        let hasLocated = false;        
 
         const restaurantIcon = L.icon({
             iconUrl: 'assets/icon/coordinates.png', 
@@ -252,14 +251,11 @@
 
         map.addLayer(clusters);
 
-        // 修正：只詢問一次定位權限
         function locateUser(forceRequest = false) {
             if (lastKnownLocation && !forceRequest) {
-                // 已定位過，直接飛到上次位置，不再請求權限
                 map.flyTo(lastKnownLocation, 17);
                 return;
             }
-
             map.locate({ setView: false, maxZoom: 17, enableHighAccuracy: true });
         }
 
@@ -281,34 +277,33 @@
             map.setView([22.7333, 120.2847], 17);
         });
 
-        // 頁面載入時只嘗試一次定位
         locateUser(true);
 
         function checkLoginStatus() {
             window.location.href = (localStorage.getItem('isLoggedIn') === 'true') ? 'profile.html' : 'personal.html';
         }
 
+        /* --- 相機功能修正處 --- */
         function triggerCamera() {
             if (!navigator.geolocation) {
                 alert("您的瀏覽器不支援定位功能，無法開啟相機。");
                 return;
             }
 
+            // 在背景更新定位（不阻礙相機開啟）
             navigator.geolocation.getCurrentPosition(
                 (pos) => {
                     window.currentCapturePos = {
                         lat: pos.coords.latitude,
                         lng: pos.coords.longitude
                     };
-                    setTimeout(() => {
-                        document.getElementById('input_camera').click();
-                    }, 0);
                 },
-                (err) => {
-                    alert("無法取得定位，請開啟定位權限後再試。");
-                },
-                { enableHighAccuracy: true, timeout: 10000 }
+                null, 
+                { enableHighAccuracy: true, timeout: 5000 }
             );
+
+            // 【關鍵修正】：立即觸發相機，避免被瀏覽器攔截彈窗
+            document.getElementById('input_camera').click();
         }
 
         async function processImage(file) {
@@ -359,14 +354,20 @@
         }
 
         function saveAndNavigate(dataUrl) {
+            // 【關鍵修正】：增加備援定位，若無座標則取地圖中心點
+            const finalPos = window.currentCapturePos || {
+                lat: map.getCenter().lat,
+                lng: map.getCenter().lng
+            };
+
             const photoData = {
                 id: Date.now(),
                 src: dataUrl,
                 name: "photo_" + Date.now() + ".jpg",
                 date: new Date().toLocaleDateString('zh-TW'),
                 time: new Date().toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit' }),
-                lat: window.currentCapturePos.lat,
-                lng: window.currentCapturePos.lng
+                lat: finalPos.lat,
+                lng: finalPos.lng
             };
 
             localStorage.setItem('temp_photo_data', JSON.stringify(photoData));
@@ -386,13 +387,15 @@
 
         document.getElementById('input_camera').addEventListener('change', async function(e) {
             const file = e.target.files[0];
-            if (!file || !window.currentCapturePos) return;
+            // 【關鍵修正】：移除對 window.currentCapturePos 的強制檢查
+            if (!file) return;
 
             const dataUrl = await processImage(file);
             if (dataUrl) {
                 saveAndNavigate(dataUrl);
             }
         });
+        /* --- 相機修正結束 --- */
 
         const FIXED_PHOTO_LOCATION = [22.732775288093578, 120.2884383523927];
 
@@ -436,10 +439,9 @@
             }
             popupContent += '</div>';
 
-            // 修正：氣泡框向上偏移，避免蓋到相機圖示
             photoMarker.bindPopup(popupContent, { 
                 maxWidth: 320,
-                offset: [0, -40]  // 向上移動 40px
+                offset: [0, -40]  
             });
         }
 
