@@ -51,6 +51,7 @@
             object-fit: cover;
             border-bottom-left-radius: 30px;
             border-bottom-right-radius: 30px;
+            background-color: #e0e0e0; /* 圖片載入前的佔位色 */
         }
 
         /* 文章內容區 */
@@ -127,6 +128,7 @@
             height: 150px;
             object-fit: cover;
             border-radius: 15px;
+            background-color: #e0e0e0;
         }
 
         /* 底部操作列 */
@@ -209,8 +211,8 @@
         </div>
 
         <div class="photo-grid">
-            <img src="https://picsum.photos/seed/a1/300" alt="p1">
-            <img src="https://picsum.photos/seed/a2/300" alt="p2">
+            <img src="https://loremflickr.com/300/300/pet,dog,cat,cute?random=101" alt="cute pet 1">
+            <img src="https://loremflickr.com/300/300/pet,dog,cat,cute?random=102" alt="cute pet 2">
         </div>
     </div>
 </div>
@@ -258,7 +260,9 @@
         document.getElementById('articleBody').textContent = shop.desc;
         document.getElementById('priceTag').textContent = "NT$ " + shop.price;
         document.getElementById('cityTag').textContent = shop.info.substring(0, 2);
-        document.getElementById('coverImg').src = `https://picsum.photos/seed/${shopId + 10}/600/400`;
+        
+        // 更新封面圖，使用可愛動物主題，並加上隨機參數確保每篇文章圖片不同
+        document.getElementById('coverImg').src = `https://loremflickr.com/600/400/pet,dog,cat,cute?random=${shopId + 200}`;
         
         // 設定導航連結 (連回 index.html 並傳送座標或名稱)
         document.getElementById('mapLink').href = `index.html?lat=${shop.pos[0]}&lng=${shop.pos[1]}`;
